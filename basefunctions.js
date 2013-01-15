@@ -6,16 +6,17 @@
   PerlinTubulence.addBaseFunction('grid', {
     name: 'Grid',
     options: {
-      size: { name: 'Size', type: 'exponential', defaultValue: 7, min: 1, max: 9  },
-      width: { name: 'Line width', type: 'number', defaultValue: 5, min: 1, max: 20 }
+      size: { name: 'Size', type: 'number', exponential: true, defaultValue: 100, min: 5, max: 1000  },
+      width: { name: 'Line width', type: 'number', defaultValue: 5, min: 1, max: 95, unit: '%' }
     },
     functionFactory: function(options) {
+      var lineWidth = options.size * options.width / 100;
       return function(x, y) {
         // javascript does not do molulos for negative numbers, so make sure it's positive
         x = Math.floor( (x + options.size * 100000) % options.size );
         y = Math.floor( (y + options.size * 100000) % options.size );
                 
-        return (x < options.width || y < options.width) ? 1 : 0;
+        return (x < lineWidth || y < lineWidth) ? 1 : 0;
       }
     }
   });
@@ -50,12 +51,15 @@
     name: 'Dots',
     options: {
       period: { name: 'Period', type: 'number', defaultValue:100, min:10, max:1000 },
-      radius: { name: 'Radius', type: 'number', defaultValue:30, min:10, max:1000 },
-      fade: { name: 'Fade', type: 'number', defaultValue:40, min:10, max:1000 }
+      radius: { name: 'Radius', type: 'number', unit: '%', defaultValue:30, min:5, max:45 },
+      fade: { name: 'Fade', type: 'number', unit: '%', defaultValue:40, min:0, max:100 }
     },
     functionFactory: function(options) {
-      radius2 = options.radius * options.radius;    // square of radius of dot
-      fade2 = options.fade * options.fade;          // square of radius of fade cutoff
+      radiusPixels = options.radius * options.period / 100;
+      fadePixels =  radiusPixels + ((options.period - radiusPixels) * options.fade / 200);
+      
+      radius2 = radiusPixels * radiusPixels;    // square of radius of dot
+      fade2 = fadePixels * fadePixels;          // square of radius of fade cutoff
       return function(x, y) {
         // javascript does not do molulos for negative numbers
         x = (options.period / 2) - ( (x + options.period * 1000) % options.period );

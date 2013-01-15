@@ -1,0 +1,48 @@
+canvas {
+  border: 1px black solid; 
+}
+body {
+  overflow: hidden;
+  margin: 0px;
+  border: 0px; 
+}
+#main {
+  width: 960px;
+  margin: 50px auto auto auto;
+}
+#left {
+  width: 600px;
+  float: left;
+}
+#right {
+  width: 340px;
+  float: right;
+  padding-left: 20px;
+}
+#previewImageWrapper {
+  width: 600px;
+  height: 400px;
+}
+#previewImage {
+  width: 100%;
+  height: 100%;
+}
+.settingsBlock {
+  margin-top:1em;
+}
+.settingTitle {
+  margin:1em 0 0.5em 0;
+}
+.settingDescription {
+  margin-top:0.3em;
+  font-size: 0.9em;
+}
+.settingSlider {
+  width: 200px;
+  float:left;
+}
+.settingSliderValue {
+  width: 100px;
+  float:left;
+  margin-left:1em;
+}

@@ -3,60 +3,12 @@
 <head>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+<script src="settings-controls.js"></script>
 <script src="noise.js"></script>
 <script src="perlin.js"></script>
 <script src="basefunctions.js"></script>
+<link rel="stylesheet" type="text/css" href="perlin.css"> 
 <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/cupertino/jquery-ui.css"> 
-<style>
-canvas {
-  border: 1px black solid; 
-}
-body {
-  overflow: hidden;
-  margin: 0px;
-  border: 0px; 
-}
-#main {
-  width: 960px;
-  margin: 50px auto auto auto;
-}
-#left {
-  width: 600px;
-  float: left;
-}
-#right {
-  width: 340px;
-  float: right;
-  padding-left: 20px;
-}
-#previewImageWrapper {
-  width: 600px;
-  height: 400px;
-}
-#previewImage {
-  width: 100%;
-  height: 100%;
-}
-.settingsBlock {
-  margin-top:1em;
-}
-.settingTitle {
-  margin:1em 0 0.5em 0;
-}
-.settingDescription {
-  margin-top:0.3em;
-  font-size: 0.9em;
-}
-.settingSlider {
-  width: 200px;
-  float:left;
-}
-.settingSliderValue {
-  width: 100px;
-  float:left;
-  margin-left:1em;
-}
-</style>
 <script>
 
 var noiseOptions = {
@@ -64,21 +16,20 @@ var noiseOptions = {
     name: 'Period',
     description: 'Number of pixels between noise values',
     type: 'number',
+    exponential: true,
     unit: 'pixels',
     min: 10,
     max: 3000,
-    defaultValue: 500,
-    value: 500
+    defaultValue: 500
   },
   magnitude: {
     name: 'Magnitude',
-    description: 'Maximum magnitude of the noise',
+    description: 'Maximum magnitude of the noise (as % of period)',
     type: 'number',
-    unit: 'pixels',
+    unit: '%',
     min: 0,
-    max: 3000,
-    defaultValue: 10,
-    value: 100
+    max: 300,
+    defaultValue: 80
   },
   type: {
     name: 'Noise type',
@@ -95,10 +46,11 @@ var noiseOptions = {
     unit: 'levels',
     min: 1,
     max: 8,
-    defaultValue: 3,
-    value: 3
+    defaultValue: 3
   }
 };
+
+var noiseSettings = {};
 
 function Preview(x) {
   var scale = Math.pow(2,x-1),
@@ -111,20 +63,22 @@ function Preview(x) {
   hpix = himgd.data;
   
   var baseFunction = $('#baseFunctionSelect').val();
+  /*
   var baseFunctionOptions = {};
   for (var o in baseFunctions[baseFunction].options) {
     baseFunctionOptions[o] = baseFunctions[baseFunction].options[o].value;
   }
   console.log(baseFunctionOptions);
+  */
   
   var imageOptions = {
     baseFunction: baseFunction,
-    baseFunctionOptions: baseFunctionOptions,
+    baseFunctionOptions: baseFunctionsSettings[baseFunction],
     perlinOptions: {
-      octaves: noiseOptions.octaves.value,
-      period: noiseOptions.period.value,
-      magnitude: noiseOptions.magnitude.value,
-      type: noiseOptions.type.value
+      octaves: noiseSettings.octaves,
+      period: noiseSettings.period,
+      magnitude: noiseSettings.magnitude * noiseSettings.period / 100,
+      type: noiseSettings.type
     }
   }
   
@@ -152,28 +106,42 @@ function TestStretch() {
 }
 
 var baseFunctions;
+var baseFunctionsSettings = {};
+
 
 $(function() {
-  injectOptions('noiseOptions', noiseOptions);
-  baseFunctions = PerlinTubulence.getBaseFunctions()
+  for (var o in noiseOptions) {
+    noiseSettings[o] = noiseOptions[o].defaultValue;
+  }
+  SettingsOptions.makeControls('noiseOptions', noiseOptions, noiseSettings);
+  
+  baseFunctions = PerlinTubulence.getBaseFunctions();
   $.each(PerlinTubulence.getBaseFunctions(), function(key, value) {   
      $('#baseFunctionSelect')
          .append($("<option></option>")
          .attr("value",key)
          .text(value.name));
      var blockID = 'baseFunction' + key;
-     //var $settingsBlock = $('<div id="' + blockID + '" class="settingsBlock" style="visibility:none">');
      var $settingsBlock = $('<div id="' + blockID + '" class="baseFunctionSettings settingsBlock">');
      $('#right').append($settingsBlock);
-     injectOptions(blockID, value.options);
+     
+     baseFunctionsSettings[key] = {}
+     for (var setting in value.options) {
+       baseFunctionsSettings[key][setting] = value.options[setting].defaultValue;
+     }
+     SettingsOptions.makeControls(blockID, value.options, baseFunctionsSettings[key]);
+     
   });
+
   showActiveBaseFunction();
   $('#baseFunctionSelect').change(function(e) {
    showActiveBaseFunction();
   });
+
   $('#drawButton').click(function(e) {
     TestStretch();
   });
+
   TestStretch();
 });
 
@@ -182,72 +150,6 @@ var id = $('#baseFunctionSelect').val();
 console.log(id);
   $('.baseFunctionSettings').hide();
   $('#baseFunction' + $('#baseFunctionSelect').val()).show();
-}
-
-function injectOptions(id, options) {
-  var $value, $value2;
-  var $block = $('#' + id);
-  
-  for (var optName in options) {
-    option = options[optName];
-    $block.append($('<div class="settingTitle">' + option.name + '</div>'));
-    switch (option.type) {
-      case 'number':
-        $value = $('<div id="' + id + '-' + optName + '-slider" class="settingSlider"></div>');
-        $value2 = $('<div id="' + id + '-' + optName + '-text" class="settingSliderValue"></div>');
-        $block.append($value).append($value2);
-        $value2.text(option.value + (option.unit ? (' ' + option.unit) : ''));
-        $value.slider({
-          min: option.min,
-          max: option.max,
-          value: option.defaultValue,
-          stop: function( event, ui ) {
-            var id = $(this).attr('id');
-            var parts = id.split('-');
-            options[parts[1]].value = ui.value;
-            $('#' + parts[0] + '-' + parts[1] + '-text').text(ui.value + (options[parts[1]].unit ? (' ' + options[parts[1]].unit) : ''));
-          }
-        });
-        $block.append($('<div style="clear:both;"></div>'));
-        break;
-      case 'exponential':
-        $value = $('<div id="' + id + '-' + optName + '-slider" class="settingSlider"></div>');
-        $value2 = $('<div id="' + id + '-' + optName + '-text" class="settingSliderValue"></div>');
-        $block.append($value).append($value2);
-        var valConverted = option.value * 100 / (option.max - option.min);
-        $value2.text(option.value + (option.unit ? (' ' + option.unit) : ''));
-        $value.slider({
-          min: 0,
-          max: 100,
-          value: option.defaultValue,
-          stop: function( event, ui ) {
-            var id = $(this).attr('id');
-            var parts = id.split('-');
-            options[parts[1]].value = ui.value;
-            $('#' + parts[0] + '-' + parts[1] + '-text').text(ui.value + (options[parts[1]].unit ? (' ' + options[parts[1]].unit) : ''));
-          }
-        });
-        $block.append($('<div style="clear:both;"></div>'));
-        break;
-      case 'select':
-        var selectHTML = '<select id="' + id + '-' + optName + '-select">';
-        for (var i=0; i<option.options.length; i++) {
-          selectHTML += '<option value="' + option.options[i] + '">' + option.options[i] + '</option>'
-        }
-        selectHTML += '</select>';
-        $value = $(selectHTML);
-        $block.append($value);
-        $value.change(function(e) {
-          var id = $(this).attr('id');
-          var parts = id.split('-');
-          options[parts[1]].value = $value.find(":selected").text();
-        });
-        break;
-    }
-    if (option.description) {
-      $block.append($('<div class="settingDescription">' + option.description + '</div>'));
-    }
-  }
 }
 
 </script>
