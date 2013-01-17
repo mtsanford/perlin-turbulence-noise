@@ -6,8 +6,8 @@
   PerlinTubulence.addBaseFunction('grid', {
     name: 'Grid',
     options: {
-      size: { name: 'Size', type: 'number', exponential: true, defaultValue: 100, min: 5, max: 1000  },
-      width: { name: 'Line width', type: 'number', defaultValue: 5, min: 1, max: 95, unit: '%' }
+      size: { name: 'Size', type: 'slider', unit: 'pixels', exponential: true, defaultValue: 100, min: 5, max: 1000  },
+      width: { name: 'Line width', type: 'slider', defaultValue: 5, min: 1, max: 95, unit: '%', description: "as percentage of grid size" }
     },
     functionFactory: function(options) {
       var lineWidth = options.size * options.width / 100;
@@ -24,7 +24,7 @@
   PerlinTubulence.addBaseFunction('ripple', {
     name: 'Cosine ripple',
     options: {
-      period: { name: 'Period', type: 'number', defaultValue: 100, min: 10, max: 200 }
+      period: { name: 'Period', type: 'slider', defaultValue: 100, min: 10, max: 200 }
     },
     functionFactory: function(options) {
       var cycle = (options.period / (2 * Math.PI));
@@ -37,7 +37,7 @@
   PerlinTubulence.addBaseFunction('stripes', {
     name: 'Cosine stripes',
     options: {
-      period: { name: 'Period', type: 'number', defaultValue:100, min:10, max:1000 }
+      period: { name: 'Period', type: 'slider', defaultValue:100, min:10, max:1000 }
     },
     functionFactory: function(options) {
       var cycle = (options.period / (2 * Math.PI));
@@ -50,9 +50,9 @@
   PerlinTubulence.addBaseFunction('dots', {
     name: 'Dots',
     options: {
-      period: { name: 'Period', type: 'number', defaultValue:100, min:10, max:1000 },
-      radius: { name: 'Radius', type: 'number', unit: '%', defaultValue:30, min:5, max:45 },
-      fade: { name: 'Fade', type: 'number', unit: '%', defaultValue:40, min:0, max:100 }
+      period: { name: 'Period', type: 'slider', defaultValue:100, min:10, max:1000 },
+      radius: { name: 'Radius', type: 'slider', unit: '%', defaultValue:30, min:5, max:45 },
+      fade: { name: 'Fade', type: 'slider', unit: '%', defaultValue:40, min:0, max:100 }
     },
     functionFactory: function(options) {
       radiusPixels = options.radius * options.period / 100;

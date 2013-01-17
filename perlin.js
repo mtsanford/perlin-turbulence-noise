@@ -13,13 +13,17 @@
         options.options[o].value = options.options[o].defaultValue;
       }
     },
+
+    getBaseFunctions: function() {
+      return baseFunctions;
+    },    
     
     addColorFunction: function(tag, options) {
       colorFunctions[tag] = options;
     },
     
-    getBaseFunctions: function() {
-      return baseFunctions;
+    getColorFunctions: function() {
+      return colorFunctions;
     },
     
     // imagedata: canvas api pixel data
@@ -30,7 +34,8 @@
     
       //var func = (typeof options.func == 'undefined') ? grid(100) : options.func;
       
-      var func = baseFunctions[options.baseFunction].functionFactory(options.baseFunctionOptions);
+      var baseFunc = baseFunctions[options.baseFunction].functionFactory(options.baseFunctionOptions);
+      var colorFunc = colorFunctions[options.colorFunction].functionFactory(options.colorFunctionOptions);
       
       if (typeof options.perlinOptions == 'undefined') options.perlinOptions = {};
       var turbMagnitude = (typeof options.perlinOptions.magnitude == 'undefined') ? 100 : options.perlinOptions.magnitude;
@@ -39,7 +44,7 @@
       var z = (typeof options.perlinOptions.seed == 'undefined') ? 0 : options.perlinOptions.seed;
       var turbType = (typeof options.perlinOptions.type == 'undefined') ? 'linear' : options.perlinOptions.type;
       
-      var colorFunc = (typeof options.colorFunc == 'undefined') ? colorLinear([255,0,255]) : options.colorFunc;
+      //var colorFunc = (typeof options.colorFunc == 'undefined') ? colorLinear([255,0,255]) : options.colorFunc;
     
       var p1, p2, px, py, color,
           colorContext = { width: width, height: height };
@@ -71,7 +76,7 @@
             py += Math.sin(angle) * length;
           }
                 
-          var value = func(px, py);
+          var value = baseFunc(px, py);
           
           colorContext.x = px;
           colorContext.y = py;

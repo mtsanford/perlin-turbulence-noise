@@ -3,11 +3,14 @@
 <head>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+<script src="farbtastic/farbtastic.min.js"></script>
 <script src="settings-controls.js"></script>
 <script src="noise.js"></script>
 <script src="perlin.js"></script>
 <script src="basefunctions.js"></script>
+<script src="colorfunctions.js"></script>
 <link rel="stylesheet" type="text/css" href="perlin.css"> 
+<link rel="stylesheet" type="text/css" href="farbtastic/farbtastic.css"> 
 <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/cupertino/jquery-ui.css"> 
 <script>
 
@@ -15,7 +18,7 @@ var noiseOptions = {
   period: {
     name: 'Period',
     description: 'Number of pixels between noise values',
-    type: 'number',
+    type: 'slider',
     exponential: true,
     unit: 'pixels',
     min: 10,
@@ -25,7 +28,7 @@ var noiseOptions = {
   magnitude: {
     name: 'Magnitude',
     description: 'Maximum magnitude of the noise (as % of period)',
-    type: 'number',
+    type: 'slider',
     unit: '%',
     min: 0,
     max: 300,
@@ -41,12 +44,18 @@ var noiseOptions = {
   },
   octaves: {
     name: 'Octaves',
-    description: 'How many levels of high frequency noice to add',
-    type: 'number',
+    description: 'How many levels of high frequency (and lower amplitude) noise to add',
+    type: 'slider',
     unit: 'levels',
     min: 1,
     max: 8,
     defaultValue: 3
+  },
+  seed: {
+    name: 'Seed',
+    description: 'The numberic seed to use in the pseudo-random number generator',
+    type: 'number',
+    defaultValue: 0
   }
 };
 
@@ -56,13 +65,14 @@ function Preview(x) {
   var scale = Math.pow(2,x-1),
       himgd, hpix,
       width = 150*scale, height = 100*scale,
-      hidden = document.getElementById('hidden' + x);
+      hidden = document.getElementById('hidden' + x),
+      baseFunction = $('#baseFunctionSelect').val(),
+      colorFunction = $('#colorFunctionSelect').val();
       
   hContext = hidden.getContext('2d');
   himgd = hContext.createImageData(width,height);
   hpix = himgd.data;
   
-  var baseFunction = $('#baseFunctionSelect').val();
   /*
   var baseFunctionOptions = {};
   for (var o in baseFunctions[baseFunction].options) {
@@ -74,11 +84,14 @@ function Preview(x) {
   var imageOptions = {
     baseFunction: baseFunction,
     baseFunctionOptions: baseFunctionsSettings[baseFunction],
+    colorFunction: colorFunction,
+    colorFunctionOptions: colorFunctionsSettings[colorFunction],
     perlinOptions: {
       octaves: noiseSettings.octaves,
       period: noiseSettings.period,
       magnitude: noiseSettings.magnitude * noiseSettings.period / 100,
-      type: noiseSettings.type
+      type: noiseSettings.type,
+      seed: noiseSettings.seed
     }
   }
   
@@ -107,29 +120,42 @@ function TestStretch() {
 
 var baseFunctions;
 var baseFunctionsSettings = {};
-
+var colorFunctions;
+var colorFunctionsSettings = {};
 
 $(function() {
-  for (var o in noiseOptions) {
-    noiseSettings[o] = noiseOptions[o].defaultValue;
-  }
+  var settingsBlock, blockID;
+
+  noiseSettings = SettingsOptions.getDefaultSettings(noiseOptions);
   SettingsOptions.makeControls('noiseOptions', noiseOptions, noiseSettings);
   
   baseFunctions = PerlinTubulence.getBaseFunctions();
-  $.each(PerlinTubulence.getBaseFunctions(), function(key, value) {   
+  $.each(baseFunctions, function(key, baseFunction) {
      $('#baseFunctionSelect')
          .append($("<option></option>")
          .attr("value",key)
-         .text(value.name));
-     var blockID = 'baseFunction' + key;
-     var $settingsBlock = $('<div id="' + blockID + '" class="baseFunctionSettings settingsBlock">');
-     $('#right').append($settingsBlock);
+         .text(baseFunction.name));
+     blockID = 'baseFunction' + key;
+     $settingsBlock = $('<div id="' + blockID + '" class="baseFunctionSettings settingsBlock">');
+     $('#baseFunctionBlocks').append($settingsBlock);
      
-     baseFunctionsSettings[key] = {}
-     for (var setting in value.options) {
-       baseFunctionsSettings[key][setting] = value.options[setting].defaultValue;
-     }
-     SettingsOptions.makeControls(blockID, value.options, baseFunctionsSettings[key]);
+     baseFunctionsSettings[key] = SettingsOptions.getDefaultSettings(baseFunction.options);
+     SettingsOptions.makeControls(blockID, baseFunction.options, baseFunctionsSettings[key]);
+     
+  });
+
+  colorFunctions = PerlinTubulence.getColorFunctions();
+  $.each(colorFunctions, function(key, colorFunction) {
+     $('#colorFunctionSelect')
+         .append($("<option></option>")
+         .attr("value",key)
+         .text(colorFunction.name));
+     blockID = 'colorFunction' + key;
+     $settingsBlock = $('<div id="' + blockID + '" class="colorFunctionSettings settingsBlock">');
+     $('#colorFunctionBlocks').append($settingsBlock);
+     
+     colorFunctionsSettings[key] = SettingsOptions.getDefaultSettings(colorFunction.options);
+     SettingsOptions.makeControls(blockID, colorFunction.options, colorFunctionsSettings[key]);
      
   });
 
@@ -138,18 +164,29 @@ $(function() {
    showActiveBaseFunction();
   });
 
+  showActiveColorFunction();
+  $('#colorFunctionSelect').change(function(e) {
+   showActiveColorFunction();
+  });
+
   $('#drawButton').click(function(e) {
     TestStretch();
   });
 
   TestStretch();
+  
 });
 
 function showActiveBaseFunction() {
-var id = $('#baseFunctionSelect').val();
-console.log(id);
+  var id = $('#baseFunctionSelect').val();
   $('.baseFunctionSettings').hide();
   $('#baseFunction' + $('#baseFunctionSelect').val()).show();
+}
+
+function showActiveColorFunction() {
+  var id = $('#colorFunctionSelect').val();
+  $('.colorFunctionSettings').hide();
+  $('#colorFunction' + $('#colorFunctionSelect').val()).show();
 }
 
 </script>
@@ -166,8 +203,13 @@ console.log(id);
       <h3 id="drawButton">Preview</h3>
     </div>
     <div id="right">
-    <h3>Base function</h3>
-    <select id="baseFunctionSelect"></select>
+      <h3>Base function</h3>
+      <select id="baseFunctionSelect"></select>
+      <div id="baseFunctionBlocks"></div>
+      <h3>Color function</h3>
+      <select id="colorFunctionSelect"></select>
+      <div id="colorFunctionBlocks"></div>
+      
     </div>
   </div>
   <canvas id="hidden1" width="150" height="100" style="display:none;">
