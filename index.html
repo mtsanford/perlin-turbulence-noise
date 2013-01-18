@@ -9,9 +9,9 @@
 <script src="perlin.js"></script>
 <script src="basefunctions.js"></script>
 <script src="colorfunctions.js"></script>
-<link rel="stylesheet" type="text/css" href="perlin.css"> 
-<link rel="stylesheet" type="text/css" href="farbtastic/farbtastic.css"> 
 <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/cupertino/jquery-ui.css"> 
+<link rel="stylesheet" type="text/css" href="farbtastic/farbtastic.css"> 
+<link rel="stylesheet" type="text/css" href="perlin.css"> 
 <script>
 
 var noiseOptions = {
@@ -31,7 +31,7 @@ var noiseOptions = {
     type: 'slider',
     unit: '%',
     min: 0,
-    max: 300,
+    max: 500,
     defaultValue: 80
   },
   type: {
@@ -123,8 +123,12 @@ var baseFunctionsSettings = {};
 var colorFunctions;
 var colorFunctionsSettings = {};
 
+var activeTab = 'noiseSettingsBlock';
+
 $(function() {
   var settingsBlock, blockID;
+  
+  //copyTest();
 
   noiseSettings = SettingsOptions.getDefaultSettings(noiseOptions);
   SettingsOptions.makeControls('noiseOptions', noiseOptions, noiseSettings);
@@ -173,6 +177,12 @@ $(function() {
     TestStretch();
   });
 
+  setActiveTab('noiseTab');
+  
+  $('.settingsTab').click(function() {
+    setActiveTab($(this).attr('id'));
+  });
+  
   TestStretch();
   
 });
@@ -189,6 +199,52 @@ function showActiveColorFunction() {
   $('#colorFunction' + $('#colorFunctionSelect').val()).show();
 }
 
+function setActiveTab(tabID) {
+  switch(tabID) {
+    case 'noiseTab':
+      activeBlock = 'noiseSettingsBlock';
+      break;
+    case 'baseTab':
+      activeBlock = 'baseSettingsBlock';
+      break;
+    case 'colorTab':
+      activeBlock = 'colorSettingsBlock';
+      break;
+  }
+  $('.settingsTab').css({opacity:0.5});
+  $('#' + tabID).css({opacity:1});
+  $('.settingsBlockWrapper').hide();
+  $('#' + activeBlock).show();
+}
+
+function copyTest() {
+  var w=1000, h=1000, x, y;
+  
+  var t1 = Date.now();
+  var a1 = new Array(w*h);
+  var t2 = Date.now();
+  console.log("Make array: " + (t2 - t1));
+  
+  for (y=0; y<h; y++) {
+    for (x=0; x<w; x++) {
+      a1[y*h + w] = 255;
+    }
+  }
+  var t3 = Date.now();
+  console.log("Fill array: " + (t3 - t2));
+
+  var a2 = new Array(w*h);
+  var t4 = Date.now();
+  for (y=0; y<h; y++) {
+    for (x=0; x<w; x++) {
+      a2[y*h + w] = a1[y*h + w];
+    }
+  }
+  var t5 = Date.now();
+  console.log("Copy array: " + (t5 - t4));
+
+}
+
 </script>
 </head>
 <body>
@@ -197,19 +253,30 @@ function showActiveColorFunction() {
       <div id="previewImageWrapper">
         <img id="previewImage"></img>
       </div>
-      <h3>Noise settings</h3>
-      <div id="noiseOptions" class="settingsBlock">
-      </div>
       <h3 id="drawButton">Preview</h3>
     </div>
     <div id="right">
-      <h3>Base function</h3>
-      <select id="baseFunctionSelect"></select>
-      <div id="baseFunctionBlocks"></div>
-      <h3>Color function</h3>
-      <select id="colorFunctionSelect"></select>
-      <div id="colorFunctionBlocks"></div>
-      
+      <div id="tabsWrapper">
+        <div class="settingsTab" id="noiseTab">Noise</div>
+        <div class="settingsTab" id="baseTab">Base</div>
+        <div class="settingsTab" id="colorTab">Color</div>
+      </div>
+      <div style="clear:both"></div>
+      <div class="settingsBlockWrapper" id="noiseSettingsBlock">
+        <h3>Noise settings</h3>
+        <div id="noiseOptions" class="settingsBlock">
+        </div>
+      </div>
+      <div class="settingsBlockWrapper" id="baseSettingsBlock">
+        <h3>Base function</h3>
+        <select id="baseFunctionSelect"></select>
+        <div id="baseFunctionBlocks"></div>
+      </div>
+      <div class="settingsBlockWrapper" id="colorSettingsBlock">
+        <h3>Color function</h3>
+        <select id="colorFunctionSelect"></select>
+        <div id="colorFunctionBlocks"></div>
+      </div>
     </div>
   </div>
   <canvas id="hidden1" width="150" height="100" style="display:none;">
