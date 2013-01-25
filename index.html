@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+<meta charset="utf-8">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
 <script src="farbtastic/farbtastic.min.js"></script>
 <script src="settings-controls.js"></script>
-<script src="noise.js"></script>
 <script src="perlin.js"></script>
 <script src="basefunctions.js"></script>
 <script src="colorfunctions.js"></script>
@@ -13,6 +13,8 @@
 <link rel="stylesheet" type="text/css" href="farbtastic/farbtastic.css"> 
 <link rel="stylesheet" type="text/css" href="perlin.css"> 
 <script>
+
+(function() {
 
 var noiseOptions = {
   period: {
@@ -61,26 +63,43 @@ var noiseOptions = {
 
 var noiseSettings = {};
 
-function Preview(x) {
-  var scale = Math.pow(2,x-1),
-      himgd, hpix,
-      width = 150*scale, height = 100*scale,
-      hidden = document.getElementById('hidden' + x),
-      baseFunction = $('#baseFunctionSelect').val(),
+var gCurrentTaskID = 0;
+var gPreviewWaitTimer = 0;
+var previewWorker;
+var previewContexts = {
+  hidden1: {},
+  hidden2: {},
+  hidden3: {}
+};
+
+var baseFunctions;
+var baseFunctionsSettings = {};
+var colorFunctions;
+var colorFunctionsSettings = {};
+
+var activeTab = 'noiseSettingsBlock';
+
+
+// Generate a new preview, but pause 200ms to make sure
+// we are not getting rapid updates
+function NewPreviewRequest() {
+  if (gPreviewWaitTimer) {
+    clearTimeout(gPreviewWaitTimer);
+  }
+  gPreviewWaitTimer = setTimeout(function() {
+    WorkerPreview();
+    gPreviewWaitTimer = 0;
+  }, 200);
+}
+
+/*
+ *  Tell the preview worker to disreguard it's current task (if any)
+ *  and start work on a new one with new options
+ */
+function WorkerPreview() {
+  var baseFunction = $('#baseFunctionSelect').val(),
       colorFunction = $('#colorFunctionSelect').val();
       
-  hContext = hidden.getContext('2d');
-  himgd = hContext.createImageData(width,height);
-  hpix = himgd.data;
-  
-  /*
-  var baseFunctionOptions = {};
-  for (var o in baseFunctions[baseFunction].options) {
-    baseFunctionOptions[o] = baseFunctions[baseFunction].options[o].value;
-  }
-  console.log(baseFunctionOptions);
-  */
-  
   var imageOptions = {
     baseFunction: baseFunction,
     baseFunctionOptions: baseFunctionsSettings[baseFunction],
@@ -94,41 +113,60 @@ function Preview(x) {
       seed: noiseSettings.seed
     }
   }
+
+  gCurrentTaskID++;
   
-  PerlinTubulence.makeImage(hpix, imageOptions, width, height, 4/scale);
-  hContext.putImageData(himgd, 0, 0);
-  hurl = hidden.toDataURL();
-  $('#previewImage').attr('src', hurl);
+  previewWorker.postMessage({
+    command:    'newtask', 
+    taskID:     gCurrentTaskID,
+    options:    imageOptions,
+  });
+  
 }
 
+function onPreviewWorkerMessage(e) {
 
-function TestStretch() {
-  var x=1;
-  var max = 3;
-  function DoPreview() {
-    setTimeout(function() {
-      Preview(x);
-      console.log("did preview " + x);
-      if (x<max) {
-        x++;
-        DoPreview();
-      }
-    },10);
+  if (e.data.type == 'result') {
+    // If we get spurious data from a canceled task, ignore it
+    if (e.data.taskID != gCurrentTaskID) return;
+    
+    var imageID = e.data.imageID;
+    previewContexts[imageID].context.putImageData(e.data.imagedata, 0, 0);
+    var hurl = previewContexts[imageID].element.toDataURL();
+    $('#previewImage').attr('src', hurl);
   }
-  DoPreview();
+  
 }
 
-var baseFunctions;
-var baseFunctionsSettings = {};
-var colorFunctions;
-var colorFunctionsSettings = {};
 
-var activeTab = 'noiseSettingsBlock';
 
 $(function() {
-  var settingsBlock, blockID;
+  var settingsBlock, blockID, previewInfo = [];
   
-  //copyTest();
+  for (var id in previewContexts) {
+    var element = document.getElementById(id);
+    previewContexts[id].context = element.getContext('2d');
+    previewContexts[id].imagedata = previewContexts[id].context.createImageData(element.width,element.height);
+    previewContexts[id].width = element.width;
+    previewContexts[id].height = element.height;
+    previewContexts[id].element = element;
+    
+    previewInfo.push({
+      imageID: id,
+      imagedata: previewContexts[id].imagedata,
+      width: element.width,
+      height: element.height,
+      scale: 600 / element.width
+    });
+
+  }
+
+  // Fire up the preview generation worker script
+  previewWorker = new Worker("preview-worker.js");
+  previewWorker.onmessage = onPreviewWorkerMessage;
+  previewWorker.postMessage( {command: 'initialize', previewInfo: previewInfo} );
+  
+  SettingsOptions.registerListener(NewPreviewRequest);
 
   noiseSettings = SettingsOptions.getDefaultSettings(noiseOptions);
   SettingsOptions.makeControls('noiseOptions', noiseOptions, noiseSettings);
@@ -165,16 +203,18 @@ $(function() {
 
   showActiveBaseFunction();
   $('#baseFunctionSelect').change(function(e) {
-   showActiveBaseFunction();
+    showActiveBaseFunction();
+    WorkerPreview();
   });
 
   showActiveColorFunction();
   $('#colorFunctionSelect').change(function(e) {
-   showActiveColorFunction();
+    showActiveColorFunction();
+    NewPreviewRequest();
   });
 
   $('#drawButton').click(function(e) {
-    TestStretch();
+    NewPreviewRequest();
   });
 
   setActiveTab('noiseTab');
@@ -183,7 +223,7 @@ $(function() {
     setActiveTab($(this).attr('id'));
   });
   
-  TestStretch();
+  WorkerPreview();
   
 });
 
@@ -211,39 +251,15 @@ function setActiveTab(tabID) {
       activeBlock = 'colorSettingsBlock';
       break;
   }
-  $('.settingsTab').css({opacity:0.5});
+  $('.settingsTab').css({opacity:0.3});
   $('#' + tabID).css({opacity:1});
   $('.settingsBlockWrapper').hide();
   $('#' + activeBlock).show();
 }
 
-function copyTest() {
-  var w=1000, h=1000, x, y;
-  
-  var t1 = Date.now();
-  var a1 = new Array(w*h);
-  var t2 = Date.now();
-  console.log("Make array: " + (t2 - t1));
-  
-  for (y=0; y<h; y++) {
-    for (x=0; x<w; x++) {
-      a1[y*h + w] = 255;
-    }
-  }
-  var t3 = Date.now();
-  console.log("Fill array: " + (t3 - t2));
+})();
 
-  var a2 = new Array(w*h);
-  var t4 = Date.now();
-  for (y=0; y<h; y++) {
-    for (x=0; x<w; x++) {
-      a2[y*h + w] = a1[y*h + w];
-    }
-  }
-  var t5 = Date.now();
-  console.log("Copy array: " + (t5 - t4));
 
-}
 
 </script>
 </head>

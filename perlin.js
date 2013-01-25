@@ -4,14 +4,18 @@
   
   var colorFunctions = {};
 
+  var defaultPerlinOptions = {
+    magnitude: 100,
+    period: 100,
+    octaves: 3,
+    seed: 0,
+    type: 'linear'
+  };
+
   var PerlinTubulence = {
-  
     
     addBaseFunction: function(tag, options) {
       baseFunctions[tag] = options;
-      for (var o in options.options) {
-        options.options[o].value = options.options[o].defaultValue;
-      }
     },
 
     getBaseFunctions: function() {
@@ -26,30 +30,59 @@
       return colorFunctions;
     },
     
-    // imagedata: canvas api pixel data
-    // options:
-    // scale: number of domain pixels per image pixel (2 = "zoomed out") 
+    /*
+     *  Compute <lines> lines of the image based on options given.
+     *  Intended to work either on the UI thread or in a web worker.
+     *
+     *  imagedata:  imagedata.data from canvas, or Uint8ClampedArray
+     *  options:    (see below)
+     *  width:      width of the image in imagedata
+     *  height:     height of the image in imagedata
+     *  scale:      how many units in image space are represented by a pixel
+     *  startY:     (optional) the start Y value in the image
+     *  lines:      (optional) the number of lines of the image to process
+     *
+     *  example of options object:
+     *
+     *  {
+     *    baseFunction: 'grid',                           // tag of the base function
+     *    baseFunctionOptions: { size: 100; width: 10; }, // options for the base function
+     *    colorFunction: 'colorLinear',                   // tag of the color function
+     *    colorFunctionOptions: { color: '#FFFFFF' },     // options for the color function
+     *    perlinOptions: {                                // (optional) options for the turbulence
+     *      octaves: 3,                                   // (optional) Number of octaves of noise
+     *      period: 400,                                  // (optional) period of first octave
+     *      magnitude: 50,                                // (optional) magnitide of noise as percentage of period
+     *      type: 'linear',                               // (optional) 'linear' or 'radial'
+     *      seed: 3423
+     *    }
+     *  }
+
+     */
+    makeImageSlice: function(imagedata, options, width, height, scale, startY, lines) {
     
-    makeImage: function(imagedata, options, width, height, scale) {
-    
-      //var func = (typeof options.func == 'undefined') ? grid(100) : options.func;
-      
       var baseFunc = baseFunctions[options.baseFunction].functionFactory(options.baseFunctionOptions);
       var colorFunc = colorFunctions[options.colorFunction].functionFactory(options.colorFunctionOptions);
       
-      if (typeof options.perlinOptions == 'undefined') options.perlinOptions = {};
-      var turbMagnitude = (typeof options.perlinOptions.magnitude == 'undefined') ? 100 : options.perlinOptions.magnitude;
-      var turbPeriod = (typeof options.perlinOptions.period == 'undefined') ? 100 : options.perlinOptions.period;
-      var octaves = (typeof options.perlinOptions.octaves == 'undefined') ? 3 : options.perlinOptions.octaves;
-      var z = (typeof options.perlinOptions.seed == 'undefined') ? 0 : options.perlinOptions.seed;
-      var turbType = (typeof options.perlinOptions.type == 'undefined') ? 'linear' : options.perlinOptions.type;
+      // Set default noise options if not present
+      options.perlinOptions = options.perlinOptions || {};  
+      for (var o in defaultPerlinOptions) {
+        options.perlinOptions[o] = options.perlinOptions[o] || defaultPerlinOptions[o];
+      }
       
-      //var colorFunc = (typeof options.colorFunc == 'undefined') ? colorLinear([255,0,255]) : options.colorFunc;
-    
+      var turbMagnitude = options.perlinOptions.magnitude;
+      var turbPeriod = options.perlinOptions.period;
+      var octaves = options.perlinOptions.octaves;
+      var z = options.perlinOptions.seed;
+      var turbType = options.perlinOptions.type;
+      
+      startY = (typeof startY == 'undefined') ? 0 : startY;
+      lines = (typeof lines == 'undefined') ? height : lines;
+          
       var p1, p2, px, py, color,
           colorContext = { width: width, height: height };
       
-      for (var y=0; y<height; y++) {
+      for (var y=startY; y<height && y<(startY+lines); y++) {
         for (var x=0; x<width; x++) {
         
           // make center of image at (0,0)
@@ -59,8 +92,8 @@
           p1 = p2 = 0;          
           for (var i=0; i<octaves; i++) {
             var pow = Math.pow(2,i);
-            p1 += PerlinNoise.noise(px * pow / turbPeriod, py * pow / turbPeriod, z + i) / (pow * 2);
-            p2 += PerlinNoise.noise(px * pow / turbPeriod, py * pow / turbPeriod, z + 32476 + i) / (pow * 2);
+            p1 += PerlinTubulence.noise(px * pow / turbPeriod, py * pow / turbPeriod, z + i) / (pow * 2);
+            p2 += PerlinTubulence.noise(px * pow / turbPeriod, py * pow / turbPeriod, z + 32476 + i) / (pow * 2);
           }
           
           if (turbType == 'linear') {
@@ -91,231 +124,88 @@
           imagedata[(y*width + x) * 4 + 3] = 255;
         }
       }
-    }
-    
-  };
+    },
 
-  function ripple(period) {
-    if (typeof period == 'undefined') period = 100;
-    return function(x, y) {
-      var cycle = (period / (2 * Math.PI));
-      return (Math.cos(Math.sqrt(x * x + y * y) / cycle) + 1) / 2;
-    }
-  }
-  
-  function stripes(period) {
-    if (typeof period == 'undefined') period = 100;
-    return function(x, y) {
-      var cycle = (period / (2 * Math.PI));
-      return (Math.cos(y / cycle) + 1) / 2;
-    }
-  }
-  
-  function grid(size, width) {
-    if (typeof size == 'undefined') size = 100;
-    if (typeof width == 'undefined') width = 3;
-    return function(x, y) {
-      // javascript does not do molulos for negative numbers
-      x = Math.floor( (x + size * 100000) % size );
-      y = Math.floor( (y + size * 100000) % size );
-              
-      return (x < width || y < width) ? 1 : 0;
-    }
-  }
-  
-  function dots(period, radius, fade) {
-    if (typeof period == 'undefined') period = 100;
-    if (typeof radius == 'undefined') radius = period * 0.3;
-    if (typeof fade == 'undefined') fade = period * 0.4;
+    // This is a port of Ken Perlin's Java code. The
+    // original Java code is at http://cs.nyu.edu/%7Eperlin/noise/.
+    // Note that in this version, a number from 0 to 1 is returned.
+    noise: function(x, y, z) {
     
-    return function(x, y) {
-      // javascript does not do molulos for negative numbers
-      x = (period / 2) - ( (x + period * 1000) % period );
-      y = (period / 2) - ( (y + period * 1000) % period );
-      
-      var dist2 = (x * x + y * y);  // square of distance from center of square
-      radius2 = radius * radius;    // square of radius of dot
-      fade2 = fade * fade;          // square of radius of fade cutoff
-      
-      return dist2 < radius2 ? 0
-        : ( dist2 < fade2 ? ( (dist2-radius2) / (fade2-radius2)) : 1 )
-        ;
-    }
-  }
-  
-  function squares(x, y) {
-    var x2 = x/100 + 10000, y2 = y/100 + 10000;
+      var X = Math.floor(x) & 255,                       // FIND UNIT CUBE THAT
+          Y = Math.floor(y) & 255,                       // CONTAINS POINT.
+          Z = Math.floor(z) & 255;
+      x -= Math.floor(x);                                // FIND RELATIVE X,Y,Z
+      y -= Math.floor(y);                                // OF POINT IN CUBE.
+      z -= Math.floor(z);
+      var    u = fade(x),                                // COMPUTE FADE CURVES
+             v = fade(y),                                // FOR EACH OF X,Y,Z.
+             w = fade(z);
+      var A = p[X  ]+Y, AA = p[A]+Z, AB = p[A+1]+Z,      // HASH COORDINATES OF
+          B = p[X+1]+Y, BA = p[B]+Z, BB = p[B+1]+Z;      // THE 8 CUBE CORNERS,
+
+      return scale(lerp(w, lerp(v, lerp(u, grad(p[AA  ], x  , y  , z   ),  // AND ADD
+                                     grad(p[BA  ], x-1, y  , z   )), // BLENDED
+                             lerp(u, grad(p[AB  ], x  , y-1, z   ),  // RESULTS
+                                     grad(p[BB  ], x-1, y-1, z   ))),// FROM  8
+                     lerp(v, lerp(u, grad(p[AA+1], x  , y  , z-1 ),  // CORNERS
+                                     grad(p[BA+1], x-1, y  , z-1 )), // OF CUBE
+                             lerp(u, grad(p[AB+1], x  , y-1, z-1 ),
+                                     grad(p[BB+1], x-1, y-1, z-1 )))));
+   },
     
-    x2 = (x2 % 2) > 1;
-    y2 = (y2 % 2)  > 1;
+    // Utility function
+    rbgColor: function(colorString) {
+      var rgb = [];
+      rgb[0] = parseInt(colorString.substr(1,2), 16);
+      rgb[1] = parseInt(colorString.substr(3,2), 16);
+      rgb[2] = parseInt(colorString.substr(5,2), 16);
+      return rgb;
+    }      
     
-    return ((x2 && !y2) || (!x2 && y2)) ? 1 : 0;
-  }
-  
-  function hills(peaks, halflife) {
-    if (typeof peaks == 'undefined') peaks = [[0,0,1]];
-    if (typeof halflife == 'undefined') halflife = 100;
-    return function(x, y) {
-      var value = 0;
-      for (var i=0; i<peaks.length; i++) {
-        var peak = peaks[i];
-        var dist = Math.sqrt((peak[0] - x) * (peak[0] - x) + (peak[1] - y) * (peak[1] - y));
-        value += Math.pow(0.5, dist/halflife) * peak[2];
-      }
-      return value;
-    }
-  }
-  
-  /*
-   * Color function factories
-   */
+  };    
+
+  /**
+   *  Data and helper functions for PerlinTubulence.noise()
+   **/
    
-  function colorLinear(rgb) {
-    if (typeof rgb == 'undefined') rgb = [255,255,255];
-    return function(value) {
-      return [rgb[0] * value, rgb[1] * value, rgb[2] * value];
-    }
-  }
+    var p = new Array(512);
+     
+    var permutation = [ 151,160,137,91,90,15,
+     131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
+     190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
+     88,237,149,56,87,174,20,125,136,171,168, 68,175,74,165,71,134,139,48,27,166,
+     77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,
+     102,143,54, 65,25,63,161, 1,216,80,73,209,76,132,187,208, 89,18,169,200,196,
+     135,130,116,188,159,86,164,100,109,198,173,186, 3,64,52,217,226,250,124,123,
+     5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,
+     223,183,170,213,119,248,152, 2,44,154,163, 70,221,153,101,155,167, 43,172,9,
+     129,22,39,253, 19,98,108,110,79,113,224,232,178,185, 112,104,218,246,97,228,
+     251,34,242,193,238,210,144,12,191,179,162,241, 81,51,145,235,249,14,239,107,
+     49,192,214, 31,181,199,106,157,184, 84,204,176,115,121,50,45,127, 4,150,254,
+     138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
+    ];
+     
+    for (var i=0; i < 256 ; i++) 
+      p[256+i] = p[i] = permutation[i]; 
+    
+    function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    function lerp( t, a, b) { return a + t * (b - a); }
+    function grad(hash, x, y, z) {
+      var h = hash & 15;                      // CONVERT LO 4 BITS OF HASH CODE
+      var u = h<8 ? x : y,                 // INTO 12 GRADIENT DIRECTIONS.
+              v = h<4 ? y : h==12||h==14 ? x : z;
+      return ((h&1) == 0 ? u : -u) + ((h&2) == 0 ? v : -v);
+    } 
+    function scale(n) { return (1 + n)/2; }
 
-  function colorExperimental(value, context) {
-    var p3 = PerlinNoise.noise(context.x / (context.width / 8), context.y / (context.width / 8), 3);
-    var p4 = PerlinNoise.noise(context.x / (context.width / 16), context.y / (context.width / 16), 8);
-    var rgb = [0,255,255];
-    //if (value < 0.3) return [0,0,0];
-    value = value + (p4 * 0.2);
-    return [p3 * value * 255, 0, value * 255];
-  }
+  /**
+   *
+   **/
   
   exports.PerlinTubulence = PerlinTubulence;
 
-})(window);
+   // export to window or self so that we can run
+   // in either UI thread or a web worker
+   // TODO: Is there a best practice on this?
+})(typeof window == 'undefined' ? self : window);
 
-
-
-function DoNoise() {
-
-	// Globals
-  var   elem
-      , context
-      , nscale = 1
-      , width
-      , height
-      , nwidth
-      , nheight;
-	
-	if (Initialize()) {
-	  DrawNoise();
-	}
-	
-	function DrawNoise() {
-	  //context.scale(nscale, nscale);
-	  var imgd = context.createImageData(nwidth,nheight);
-	  if (!imgd) {
-	    alert("createImageData failed");
-	    return;
-	  }
-	  
-	  var pix = imgd.data;
-
-    Turbulence({ 
-      func: dots(400,150,180),
-      //func: stripes(500),
-      //func: hills([[-300,-200,1],[400,-200,.8]], 250),
-      turbMagnitude: 200,
-      turbPeriod: 600,
-      turbOctaves: 7,
-      turbType: 'radial',
-      seed: 12361,
-      //colorFunc: colorLinear([0xcd,0x5c,0x5c])
-      colorFunc: colorExperimental
-    });
-    
-    function Turbulence(options) {
-      if (typeof options == 'undefined') options = {};
-      var func = (typeof options.func == 'undefined') ? grid(100) : options.func;
-      var turbMagnitude = (typeof options.turbMagnitude == 'undefined') ? 100 : options.turbMagnitude;
-      var turbPeriod = (typeof options.turbPeriod == 'undefined') ? 100 : options.turbPeriod;
-      var octaves = (typeof options.turbOctaves == 'undefined') ? 3 : options.turbOctaves;
-      var z = (typeof options.seed == 'undefined') ? 0 : options.seed;
-      var turbType = (typeof options.turbType == 'undefined') ? 'linear' : options.turbType;
-      var colorFunc = (typeof options.colorFunc == 'undefined') ? colorLinear([255,0,255]) : options.colorFunc;
-    
-      var p1, p2, px, py, color,
-          colorContext = { width: width, height: height };
-      
-      for (var y=0; y<nheight; y++) {
-        for (var x=0; x<nwidth; x++) {
-        
-          p1 = p2 = 0;          
-          for (var i=0; i<octaves; i++) {
-            var pow = Math.pow(2,i);
-            p1 += PerlinNoise.noise(x * pow / turbPeriod, y * pow/ turbPeriod, z + i) / (pow * 2);
-            p2 += PerlinNoise.noise(x * pow / turbPeriod, y * pow/ turbPeriod, z + 32476 + i) / (pow * 2);
-          }
-
-          // make center of image at (0,0)
-          px = x - nwidth / 2;
-          py = y - nheight / 2;      
-          
-          if (turbType == 'linear') {
-            // translationsl perterbation
-            px += ((p1-0.5) * turbMagnitude);
-            py += ((p2-0.5) * turbMagnitude);
-          }
-          
-          if (turbType == 'radial') {
-            var angle = p1 * Math.PI * 2;
-            var length = p2 * turbMagnitude;
-            px += Math.cos(angle) * length;
-            py += Math.sin(angle) * length;
-          }
-                
-          var value = func(px, py);
-          
-          colorContext.x = x;
-          colorContext.y = y;
-          colorContext.p1 = p1;
-          colorContext.p2 = p2;
-          
-          color = colorFunc(value, colorContext);
-          
-          pix[(y*nwidth + x) * 4] = color[0];
-          pix[(y*nwidth + x) * 4 + 1] =  color[1];
-          pix[(y*nwidth + x) * 4 + 2] = color[2];
-          pix[(y*nwidth + x) * 4 + 3] = 255;
-        }
-      }
-      context.putImageData(imgd, 0, 0);
-    }
-    
-  }
-	
-	function Initialize() {
-  
-    elem = document.getElementById('noise');
-      if (!elem) {
-      alert("can't get canvas element");
-      return false;
-    }
-    
-    width = elem.width;
-    height = elem.height;
-    nwidth = width / nscale
-    nheight = height / nscale;
-    
-	  if (!elem.getContext) {
-      alert("getContext() does not exist");
-      return false;
-    }
-    
-    context = elem.getContext('2d');
-    if (!context) {
-      alert("can't get canvas context");
-      return false;
-    }
-    
-    return true;
-  }
-
-  
-}

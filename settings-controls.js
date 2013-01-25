@@ -1,6 +1,14 @@
 (function(exports) {
 
+  var listeners = [];
+
   var SettingsOptions = {
+  
+    // Register a listener for when values have changed
+    // listner signature = function(blockID, variable, newValue)
+    registerListener: function(listener) {
+      listeners.push(listener);
+    },
   
     makeControls: function(blockID, options, settings) {
       var $block = $('#' + blockID);
@@ -35,14 +43,6 @@
       return settings;
     },
 
-    rbgColor: function(colorString) {
-      var rgb = [];
-      rgb[0] = parseInt(colorString.substr(1,2), 16);
-      rgb[1] = parseInt(colorString.substr(3,2), 16);
-      rgb[2] = parseInt(colorString.substr(5,2), 16);
-      return rgb;
-    }      
-  
   }
   
   function makeNumberControl($block, blockID, config, settings, which) {
@@ -66,11 +66,12 @@
       min: config.exponential ? 0 : config.min,
       max: config.exponential ? 100 : config.max,
       value: config.exponential ? valueToSliderPos(settings[which]) : settings[which],
-      stop: function( event, ui ) {
+      slide: function( event, ui ) {
         var newValue = config.exponential ? sliderPosToValue(ui.value) : ui.value;
         settings[which] = newValue;
         $text.text((newValue).toFixed(3) + unitText);
-      }
+        notifyChange(blockID, which, settings[which]);
+      },
     });
     function valueToSliderPos(value) {
       return Math.floor(Math.log( value/config.min ) * 100 / ratio);
@@ -103,6 +104,7 @@
     $color.farbtastic(function() {
       var newColor = $.farbtastic('#' + colorID).color;
       settings[which] = newColor;
+      notifyChange(blockID, which, newColor);
     });
     $input.change(function(e) {
       console.log($input.val());
@@ -110,7 +112,12 @@
     });
   }
 
-  
+  function notifyChange(blockID, which, newValue) {
+    for (var i=0; i<listeners.length; i++) {
+     listeners[i](blockID, which, newValue);
+    }
+  }
+
   exports.SettingsOptions = SettingsOptions;
 
 })(window);

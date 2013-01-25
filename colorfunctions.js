@@ -8,24 +8,33 @@
       color: { name: 'Color', type: 'color', defaultValue: '#FFFFFF', description: "Color for value of 1" },
     },
     functionFactory: function(options) {
-      var rgb = SettingsOptions.rbgColor(options.color);
+      var rgb = PerlinTubulence.rbgColor(options.color);
       return function(value) {
         return [rgb[0] * value, rgb[1] * value, rgb[2] * value];
       }
     }
   });
   
-  PerlinTubulence.addColorFunction('colorLinearRed', {
-    name: 'Red',
+  PerlinTubulence.addColorFunction('noisy', {
+    name: 'Noisy',
     options: {
-      size: { name: 'Dummy', type: 'slider', defaultValue: 100, min: 5, max: 1000  },
+      period: { name: 'Period', type: 'slider', defaultValue: 200, min: 10, max: 2000, exponential: true },
+      color1: { name: 'Color 1', type: 'color', defaultValue: '#FF0000'},
+      color2: { name: 'Color 2', type: 'color', defaultValue: '#0000FF'}
     },
     functionFactory: function(options) {
-      return function(value) {
-        return [255 * value, 0 * value, 0 * value];
+      var rgb1 = PerlinTubulence.rbgColor(options.color1);
+      var rgb2 = PerlinTubulence.rbgColor(options.color2);
+      return function(value, colorContext) {
+        var noise = PerlinTubulence.noise(colorContext.x / options.period, colorContext.y / options.period, 5);
+        return [  
+          ((rgb1[0] * noise) + (rgb2[0] * (1 - noise))) * value,
+          ((rgb1[1] * noise) + (rgb2[1] * (1 - noise))) * value,
+          ((rgb1[2] * noise) + (rgb2[2] * (1 - noise))) * value
+        ];
       }
     }
-  });
+  });  
   
 })(PerlinTubulence);
 
