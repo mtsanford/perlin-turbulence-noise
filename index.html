@@ -31,9 +31,10 @@ var noiseOptions = {
     name: 'Magnitude',
     description: 'Maximum magnitude of the noise (as % of period)',
     type: 'slider',
+    exponential: true,
     unit: '%',
-    min: 0,
-    max: 500,
+    min: 1,
+    max: 2000,
     defaultValue: 80
   },
   type: {

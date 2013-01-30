@@ -79,15 +79,15 @@
       startY = (typeof startY == 'undefined') ? 0 : startY;
       lines = (typeof lines == 'undefined') ? height : lines;
           
-      var p1, p2, px, py, color,
+      var p1, p2, rx, ry, px, py, color,
           colorContext = { width: width, height: height };
       
       for (var y=startY; y<height && y<(startY+lines); y++) {
         for (var x=0; x<width; x++) {
         
           // make center of image at (0,0)
-          px = (x - width/2) * scale;
-          py = (y - height/2) * scale;
+          rx = px = (x - width/2) * scale;
+          ry = py = (y - height/2) * scale;
 
           p1 = p2 = 0;          
           for (var i=0; i<octaves; i++) {
@@ -111,8 +111,10 @@
                 
           var value = baseFunc(px, py);
           
-          colorContext.x = px;
-          colorContext.y = py;
+          colorContext.x = rx;
+          colorContext.y = ry;
+          colorContext.px = px;
+          colorContext.py = py;
           colorContext.p1 = p1;
           colorContext.p2 = p2;
           

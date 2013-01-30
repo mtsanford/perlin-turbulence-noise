@@ -26,6 +26,9 @@
           case 'select':
             makeSelectControl($block, blockID, option, settings, optName);
             break;
+          case 'checkbox':
+            makeCheckboxControl($block, blockID, option, settings, optName);
+            break;
           case 'color':
             makeColorControl($block, blockID, option, settings, optName);
             break;
@@ -91,6 +94,19 @@
     $block.append($select);
     $select.change(function(e) {
       settings[which] = $select.find(":selected").text();
+      notifyChange(blockID, which, settings[which]);
+    });
+  }
+
+  function makeCheckboxControl($block, blockID, config, settings, which) {
+    console.log(config);
+    var checked = settings.which ? 'checked="checked"' : '';
+    var selectHTML = '<input type="checkbox" id="' + blockID + '-' + which + '-cb" ' + checked + '/>';
+    $select = $(selectHTML);
+    $block.append($select).append(config.name);
+    $select.change(function(e) {
+      settings[which] = $select.is(":checked");
+      notifyChange(blockID, which, settings[which]);
     });
   }
 
