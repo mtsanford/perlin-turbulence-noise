@@ -4,16 +4,16 @@
   
   var colorFunctions = {};
 
-  var defaultPerlinOptions = {
-    magnitude: 100,
-    period: 100,
-    octaves: 3,
-    seed: 0,
-    type: 'linear'
-  };
-
   var PerlinTubulence = {
     
+    defaultPerlinOptions : {
+      magnitude: 100,
+      period: 100,
+      octaves: 3,
+      seed: 0,
+      type: 'linear'
+    },
+
     addBaseFunction: function(tag, options) {
       baseFunctions[tag] = options;
     },
@@ -30,51 +30,52 @@
       return colorFunctions;
     },
     
+    makeBaseFunction: function(tag, options) {
+      return baseFunctions[tag].functionFactory(options);
+    },
+    
+    makeColorFunction: function(tag, options) {
+      return colorFunctions[tag].functionFactory(options);
+    },
+
     /*
      *  Compute <lines> lines of the image based on options given.
      *  Intended to work either on the UI thread or in a web worker.
      *
-     *  imagedata:  imagedata.data from canvas, or Uint8ClampedArray
-     *  options:    (see below)
-     *  width:      width of the image in imagedata
-     *  height:     height of the image in imagedata
-     *  scale:      how many units in image space are represented by a pixel
-     *  startY:     (optional) the start Y value in the image
-     *  lines:      (optional) the number of lines of the image to process
+     *  imagedata:      imagedata.data from canvas, or Uint8ClampedArray
+     *  baseFunction:   function(x,y) that returns a value from 0 to 1
+     *  colorFunction:  function(val, context) that returns a RGB color for val 0-1
+     *  perlinOptions:  (see below) how to apply turbulence to the base function.  Use null for default
+     *  width:          width of the image in imagedata
+     *  height:         height of the image in imagedata
+     *  scale:          how many units in image space are represented by a pixel
+     *  startY:         (optional) the start Y value in the image
+     *  lines:          (optional) the number of lines of the image to process
      *
      *  example of options object:
      *
-     *  {
-     *    baseFunction: 'grid',                           // tag of the base function
-     *    baseFunctionOptions: { size: 100; width: 10; }, // options for the base function
-     *    colorFunction: 'colorLinear',                   // tag of the color function
-     *    colorFunctionOptions: { color: '#FFFFFF' },     // options for the color function
-     *    perlinOptions: {                                // (optional) options for the turbulence
-     *      octaves: 3,                                   // (optional) Number of octaves of noise
-     *      period: 400,                                  // (optional) period of first octave
-     *      magnitude: 50,                                // (optional) magnitide of noise as percentage of period
-     *      type: 'linear',                               // (optional) 'linear' or 'radial'
-     *      seed: 3423
-     *    }
+     *  {                                  
+     *    octaves: 3,                             // (optional) Number of octaves of noise
+     *    period: 400,                            // (optional) period of first octave
+     *    magnitude: 50,                          // (optional) magnitide of noise as percentage of period
+     *    type: 'linear',                         // (optional) 'linear' or 'radial'
+     *    seed: 3423                              // (optional) number to use as 'seed' for pseudo-random noise
      *  }
-
+     *
      */
-    makeImageSlice: function(imagedata, options, width, height, scale, startY, lines) {
+    makeImageSlice: function(imagedata, baseFunction, colorFunction, perlinOptions, width, height, scale, startY, lines) {
     
-      var baseFunc = baseFunctions[options.baseFunction].functionFactory(options.baseFunctionOptions);
-      var colorFunc = colorFunctions[options.colorFunction].functionFactory(options.colorFunctionOptions);
-      
       // Set default noise options if not present
-      options.perlinOptions = options.perlinOptions || {};  
-      for (var o in defaultPerlinOptions) {
-        options.perlinOptions[o] = options.perlinOptions[o] || defaultPerlinOptions[o];
+      perlinOptions = perlinOptions || {};  
+      for (var o in PerlinTubulence.defaultPerlinOptions) {
+        perlinOptions[o] = perlinOptions[o] || PerlinTubulence.defaultPerlinOptions[o];
       }
       
-      var turbMagnitude = options.perlinOptions.magnitude;
-      var turbPeriod = options.perlinOptions.period;
-      var octaves = options.perlinOptions.octaves;
-      var z = options.perlinOptions.seed;
-      var turbType = options.perlinOptions.type;
+      var turbMagnitude = perlinOptions.magnitude;
+      var turbPeriod = perlinOptions.period;
+      var octaves = perlinOptions.octaves;
+      var z = perlinOptions.seed;
+      var turbType = perlinOptions.type;
       
       startY = (typeof startY == 'undefined') ? 0 : startY;
       lines = (typeof lines == 'undefined') ? height : lines;
@@ -109,7 +110,7 @@
             py += Math.sin(angle) * length;
           }
                 
-          var value = baseFunc(px, py);
+          var value = baseFunction(px, py);
           
           colorContext.x = rx;
           colorContext.y = ry;
@@ -118,7 +119,7 @@
           colorContext.p1 = p1;
           colorContext.p2 = p2;
           
-          color = colorFunc(value, colorContext);
+          color = colorFunction(value, colorContext);
           
           imagedata[(y*width + x) * 4] = color[0];
           imagedata[(y*width + x) * 4 + 1] =  color[1];

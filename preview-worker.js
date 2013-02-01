@@ -3,8 +3,11 @@ importScripts("perlin.js");
 importScripts("basefunctions.js");
 importScripts("colorfunctions.js");
 
-var gCurrentTaskID;
 var gPreviewInfo;
+
+var gCurrentTaskID;
+var gBaseFunction;
+var gColorFunction;
 
 self.onmessage = function (e) {
   var command = e.data.command;
@@ -29,6 +32,9 @@ function newTask(command) {
 }
 
 function makePreviews(taskID, options) {
+  gBaseFunction = PerlinTubulence.makeBaseFunction(options.baseFunction, options.baseFunctionOptions);
+  gColorFunction = PerlinTubulence.makeColorFunction(options.colorFunction, options.colorFunctionOptions);
+  
   function makePreview(i, startY) {
     setTimeout(function() {
       if (taskID != gCurrentTaskID)
@@ -39,8 +45,10 @@ function makePreviews(taskID, options) {
       // Do a max 50 lines at a time
       // TODO: Make this based on time
       var numLines = Math.min(50, gPreviewInfo[i].height - startY);
-      PerlinTubulence.makeImageSlice(imagedata.data, options, gPreviewInfo[i].width, gPreviewInfo[i].height, gPreviewInfo[i].scale, startY, numLines);
+      PerlinTubulence.makeImageSlice(imagedata.data, gBaseFunction, gColorFunction, options.perlinOptions,
+        gPreviewInfo[i].width, gPreviewInfo[i].height, gPreviewInfo[i].scale, startY, numLines);
       
+      // TODO this should not ever happen, since we did the same check at the top
       if (taskID != gCurrentTaskID)
         return;
 
@@ -56,6 +64,7 @@ function makePreviews(taskID, options) {
       }
     }, 0);
   };
+  
   makePreview(0, 0);
 }
 
