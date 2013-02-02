@@ -22,6 +22,7 @@
       color1: { name: 'Color 1', type: 'color', defaultValue: '#FF0000'},
       color2: { name: 'Color 2', type: 'color', defaultValue: '#0000FF'},
       turbulence: { name: 'Apply turbulence', type: 'checkbox', defaultValue: false},
+      scurve: { name: 'Use S-curve', type: 'checkbox', defaultValue: true},
     },
     functionFactory: function(options) {
       var rgb1 = PerlinTubulence.rbgColor(options.color1);
@@ -30,6 +31,9 @@
         var noise = options.turbulence ? 
                     PerlinTubulence.noise(colorContext.px / options.period, colorContext.py / options.period, 5) :
                     PerlinTubulence.noise(colorContext.x / options.period, colorContext.y / options.period, 5);
+        if (options.scurve) {
+          noise = (3 * noise * noise) - (2 * noise * noise * noise);
+        }
         return [  
           ((rgb1[0] * noise) + (rgb2[0] * (1 - noise))) * value,
           ((rgb1[1] * noise) + (rgb2[1] * (1 - noise))) * value,

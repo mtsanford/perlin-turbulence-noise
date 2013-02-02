@@ -103,6 +103,9 @@
             py += ((p2-0.5) * turbMagnitude);
           }
           
+          // TODO, this is not really a good way to do this, since
+          // It does not appear that the distribution of the noise
+          // is uniform, leading to bias in the angle.
           if (turbType == 'radial') {
             var angle = p1 * Math.PI * 2;
             var length = p2 * turbMagnitude;
@@ -159,9 +162,15 @@
     // Utility function
     rbgColor: function(colorString) {
       var rgb = [];
-      rgb[0] = parseInt(colorString.substr(1,2), 16);
-      rgb[1] = parseInt(colorString.substr(3,2), 16);
-      rgb[2] = parseInt(colorString.substr(5,2), 16);
+      if (colorString.length == 4) {
+        rgb[0] = parseInt(colorString.substr(1,1), 16) * 16;
+        rgb[1] = parseInt(colorString.substr(2,1), 16) * 16;
+        rgb[2] = parseInt(colorString.substr(3,1), 16) * 16;
+      } else {
+        rgb[0] = parseInt(colorString.substr(1,2), 16);
+        rgb[1] = parseInt(colorString.substr(3,2), 16);
+        rgb[2] = parseInt(colorString.substr(5,2), 16);
+      }
       return rgb;
     }      
     

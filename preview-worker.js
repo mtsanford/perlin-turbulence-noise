@@ -48,10 +48,6 @@ function makePreviews(taskID, options) {
       PerlinTubulence.makeImageSlice(imagedata.data, gBaseFunction, gColorFunction, options.perlinOptions,
         gPreviewInfo[i].width, gPreviewInfo[i].height, gPreviewInfo[i].scale, startY, numLines);
       
-      // TODO this should not ever happen, since we did the same check at the top
-      if (taskID != gCurrentTaskID)
-        return;
-
       startY += numLines;
       if (startY >= gPreviewInfo[i].height) {
         self.postMessage({ type: 'result', taskID: taskID, imageID: gPreviewInfo[i].imageID, imagedata: imagedata});

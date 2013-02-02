@@ -49,11 +49,15 @@
   }
   
   function makeNumberControl($block, blockID, config, settings, which) {
-    var $input = $('<input type="text" id="' + blockID + '-' + which + '-slider" class="settingNumber"></input>');
+    var $input = $('<input type="text" id="' + blockID + '-' + which + '-slider" class="settingNumber" spellcheck=false></input>');
     $block.append($input);
     $input.val(settings[which]);
-    $input.change(function(e) {
-      settings[which] = $input.val();
+    $input.keyup(function(e) {
+      var newVal = parseFloat($input.val());
+      if (!isNaN(newVal)) {
+        settings[which] = newVal;
+        notifyChange(blockID, which, settings[which]);
+      }
     });
   }
 
@@ -113,18 +117,24 @@
   function makeColorControl($block, blockID, config, settings, which) {
     var inputID = blockID + '-' + which + '-input';
     var colorID = blockID + '-' + which + '-color';
-    var $input = $('<input type="text" id="' + inputID + '" class="settingColorInput"></input>');
+    var $input = $('<input type="text" id="' + inputID + '" class="settingColorInput" spellcheck=false></input>');
     var $color = $('<div id="' + colorID + '" class="settingColorColor"></div>');
     $block.append($input).append($color);
     $input.val(settings[which]);
-    $color.farbtastic(function() {
+    //var $picker = $color.farbtastic(function() {
+    var $picker = $.farbtastic($color, function() {
       var newColor = $.farbtastic('#' + colorID).color;
       settings[which] = newColor;
+      $input.val(newColor);
       notifyChange(blockID, which, newColor);
     });
-    $input.change(function(e) {
+    $input.keyup(function(e) {
       console.log($input.val());
-      settings[which] = $input.val();
+      if (colorOK($input.val())) {
+        settings[which] = $input.val();
+        $picker.setColor(settings[which]);
+        notifyChange(blockID, which, settings[which]);
+      }
     });
   }
 
@@ -132,6 +142,24 @@
     for (var i=0; i<listeners.length; i++) {
      listeners[i](blockID, which, newValue);
     }
+  }
+  
+  function colorOK(colorString) {
+    var okNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+      'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'];
+      
+    if (colorString.length != 7 && colorString.length != 4) {
+      return false;
+    }
+    if (colorString[0] != '#') {
+      return false;
+    }
+    for (var i=1; i<colorString.length; i++) {
+      if (okNumbers.indexOf(colorString[i]) == -1) {
+        return false;
+      }
+    }
+    return true;
   }
 
   exports.SettingsOptions = SettingsOptions;
