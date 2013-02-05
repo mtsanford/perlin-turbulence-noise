@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+<script src="tabs.js"></script>
 <script src="farbtastic/farbtastic.min.js"></script>
 <script src="settings-controls.js"></script>
 <script src="perlin.js"></script>
@@ -17,12 +18,14 @@
 <body>
   <div id="main">
     <div id="left">
+      <div class="header">Image preview</div>
+      <div style="clear:both;"></div>
       <div id="previewImageWrapper">
         <img id="previewImage"></img>
       </div>
-      <div class="tab" id="makeTab">Image Creation</div>
+      <div class="header">Create large image</div>
       <div style="clear:both;"></div>
-      <p>Use the settings to the right to preview possible images.  To create a large version of the preview image, click the create button.</p>
+      <p>Use the settings to the right to preview possible images.  To create a large version of the preview image in another window, click the create button.</p>
       <div class="settingType">Width</div>
       <input id="imageWidth" value="600" />
       <div class="settingType">Height</div>
@@ -31,32 +34,32 @@
       <button type="button" id="createImage">Create</button>
     </div>
     <div id="right">
-      <div id="tabsWrapper">
-        <div class="tab settingsTab" id="baseTab">Base</div>
-        <div class="tab settingsTab" id="positionTab">Position</div>
-        <div class="tab settingsTab" id="noiseTab">Noise</div>
-        <div class="tab settingsTab" id="colorTab">Color</div>
-      </div>
-      <div style="clear:both"></div>
-      <div class="settingsBlockWrapper" id="baseSettingsBlock">
-        <h3>Base function</h3>
-        <select id="baseFunctionSelect"></select>
-        <div id="baseFunctionBlocks"></div>
-      </div>
-      <div class="settingsBlockWrapper" id="positionSettingsBlock">
-        <h3>Position settings</h3>
-        <div id="positionOptions" class="settingsBlock">
+      <div id="optionsTabs" class="tabsWrapper">
+        <div class="header tab" id="baseTab">Base</div>
+        <div class="header tab" id="positionTab">Position</div>
+        <div class="header tab" id="noiseTab">Noise</div>
+        <div class="header tab" id="colorTab">Color</div>
+        <div style="clear:both"></div>
+        <div class="tabBlock" id="baseTab-block">
+          <h3>Base function</h3>
+          <select id="baseFunctionSelect"></select>
+          <div id="baseFunctionBlocks"></div>
         </div>
-      </div>
-      <div class="settingsBlockWrapper" id="noiseSettingsBlock">
-        <h3>Noise settings</h3>
-        <div id="noiseOptions" class="settingsBlock">
+        <div class="tabBlock" id="positionTab-block">
+          <h3>Position settings</h3>
+          <div id="positionOptions" class="settingsBlock">
+          </div>
         </div>
-      </div>
-      <div class="settingsBlockWrapper" id="colorSettingsBlock">
-        <h3>Color function</h3>
-        <select id="colorFunctionSelect"></select>
-        <div id="colorFunctionBlocks"></div>
+        <div class="tabBlock" id="noiseTab-block">
+          <h3>Noise settings</h3>
+          <div id="noiseOptions" class="settingsBlock">
+          </div>
+        </div>
+        <div class="tabBlock" id="colorTab-block">
+          <h3>Color function</h3>
+          <select id="colorFunctionSelect"></select>
+          <div id="colorFunctionBlocks"></div>
+        </div>
       </div>
     </div>
   </div>

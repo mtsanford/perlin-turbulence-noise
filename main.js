@@ -244,11 +244,7 @@ $(function() {
     NewPreviewRequest();
   });
 
-  setActiveTab('noiseTab');
-  
-  $('.settingsTab').click(function() {
-    setActiveTab($(this).attr('id'));
-  });
+  $('#optionsTabs').makeTabs();
   
   WorkerPreview();
   
@@ -277,27 +273,6 @@ function showActiveColorFunction() {
   var id = $('#colorFunctionSelect').val();
   $('.colorFunctionSettings').hide();
   $('#colorFunction' + $('#colorFunctionSelect').val()).show();
-}
-
-function setActiveTab(tabID) {
-  switch(tabID) {
-    case 'baseTab':
-      activeBlock = 'baseSettingsBlock';
-      break;
-    case 'positionTab':
-      activeBlock = 'positionSettingsBlock';
-      break;
-    case 'noiseTab':
-      activeBlock = 'noiseSettingsBlock';
-      break;
-    case 'colorTab':
-      activeBlock = 'colorSettingsBlock';
-      break;
-  }
-  $('.settingsTab').css({opacity:0.3});
-  $('#' + tabID).css({opacity:1});
-  $('.settingsBlockWrapper').hide();
-  $('#' + activeBlock).show();
 }
 
 })();
