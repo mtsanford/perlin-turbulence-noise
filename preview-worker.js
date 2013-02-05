@@ -45,7 +45,7 @@ function makePreviews(taskID, options) {
       // Do a max 50 lines at a time
       // TODO: Make this based on time
       var numLines = Math.min(50, gPreviewInfo[i].height - startY);
-      PerlinTubulence.makeImageSlice(imagedata.data, gBaseFunction, gColorFunction, options.perlinOptions,
+      PerlinTubulence.makeImageSlice(imagedata.data, gBaseFunction, gColorFunction, options.perlinOptions, options.positionOptions,
         gPreviewInfo[i].width, gPreviewInfo[i].height, gPreviewInfo[i].scale, startY, numLines);
       
       startY += numLines;

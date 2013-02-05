@@ -42,17 +42,18 @@
      *  Compute <lines> lines of the image based on options given.
      *  Intended to work either on the UI thread or in a web worker.
      *
-     *  imagedata:      imagedata.data from canvas, or Uint8ClampedArray
-     *  baseFunction:   function(x,y) that returns a value from 0 to 1
-     *  colorFunction:  function(val, context) that returns a RGB color for val 0-1
-     *  perlinOptions:  (see below) how to apply turbulence to the base function.  Use null for default
-     *  width:          width of the image in imagedata
-     *  height:         height of the image in imagedata
-     *  scale:          how many units in image space are represented by a pixel
-     *  startY:         (optional) the start Y value in the image
-     *  lines:          (optional) the number of lines of the image to process
+     *  imagedata:        imagedata.data from canvas, or Uint8ClampedArray
+     *  baseFunction:     function(x,y) that returns a value from 0 to 1
+     *  colorFunction:    function(val, context) that returns a RGB color for val 0-1
+     *  perlinOptions:    (see below) how to apply turbulence to the base function.  Use null for default
+     *  positionOptions:  (see below) translation/rotation
+     *  width:            width of the image in imagedata
+     *  height:           height of the image in imagedata
+     *  scale:            how many units in image space are represented by a pixel
+     *  startY:           (optional) the start Y value in the image
+     *  lines:            (optional) the number of lines of the image to process
      *
-     *  example of options object:
+     *  example of perlinOptions object:
      *
      *  {                                  
      *    octaves: 3,                             // (optional) Number of octaves of noise
@@ -62,8 +63,17 @@
      *    seed: 3423                              // (optional) number to use as 'seed' for pseudo-random noise
      *  }
      *
+     *  example of positionOptions object:
+     *
+     *  {                                  
+     *    horizontal: 100,                        // shift center 100 pixels to the right
+     *    vertical: 0,
+     *    angle: 45,                              // rotate counterclockwize 45 degrees
+     *  }
+     *
+     *
      */
-    makeImageSlice: function(imagedata, baseFunction, colorFunction, perlinOptions, width, height, scale, startY, lines) {
+    makeImageSlice: function(imagedata, baseFunction, colorFunction, perlinOptions, positionOptions, width, height, scale, startY, lines) {
     
       // Set default noise options if not present
       perlinOptions = perlinOptions || {};  
@@ -77,19 +87,26 @@
       var z = perlinOptions.seed;
       var turbType = perlinOptions.type;
       
+      var posCos = Math.cos(positionOptions.angle * Math.PI / 90);
+      var posSin = Math.sin(positionOptions.angle * Math.PI / 90);
+      
       startY = (typeof startY == 'undefined') ? 0 : startY;
       lines = (typeof lines == 'undefined') ? height : lines;
           
-      var p1, p2, rx, ry, px, py, color,
+      var p1, p2, x2, y2, rx, ry, px, py, color,
           colorContext = { width: width, height: height };
       
       for (var y=startY; y<height && y<(startY+lines); y++) {
         for (var x=0; x<width; x++) {
         
-          // make center of image at (0,0)
-          rx = px = (x - width/2) * scale;
-          ry = py = (y - height/2) * scale;
-
+          // make center of image at (0,0) and scale it
+          x2 = (x - width/2) * scale;
+          y2 = (y - height/2) * scale;
+          
+          // apply rotation and translation
+          rx = px = (x2 * posCos - y2 * posSin) - positionOptions.horizontal;
+          ry = py = (x2 * posSin + y2 * posCos) - positionOptions.vertical;
+  
           p1 = p2 = 0;          
           for (var i=0; i<octaves; i++) {
             var pow = Math.pow(2,i);

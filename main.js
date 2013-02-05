@@ -18,8 +18,8 @@ var noiseOptions = {
     type: 'slider',
     exponential: true,
     unit: '%',
-    min: 1,
-    max: 2000,
+    min: 4,
+    max: 4000,
     defaultValue: 80
   },
   type: {
@@ -48,6 +48,39 @@ var noiseOptions = {
 };
 
 var noiseSettings = {};
+
+var positionOptions = {
+  horizontal: {
+    name: 'Horizontal',
+    description: 'Number of pixels to shift right horizontally',
+    type: 'slider',
+    unit: 'pixels',
+    min: -1000,
+    max: 1000,
+    defaultValue: 0
+  },
+  vertical: {
+    name: 'Vertical',
+    description: 'Number of pixels to shift up vertically',
+    type: 'slider',
+    unit: 'pixels',
+    min: -1000,
+    max: 1000,
+    defaultValue: 0
+  },
+  angle: {
+    name: 'Angle',
+    description: 'Angle to rotate',
+    type: 'slider',
+    unit: 'degrees',
+    min: 0,
+    max: 90,
+    defaultValue: 0
+  },
+};
+
+var positionSettings = {};
+
 
 var gCurrentTaskID = 0;
 var gPreviewWaitTimer = 0;
@@ -93,7 +126,8 @@ function makeOptionsObject() {
       magnitude: noiseSettings.magnitude * noiseSettings.period / 100,
       type: noiseSettings.type,
       seed: noiseSettings.seed
-    }
+    },
+    positionOptions: positionSettings
   }
   
 }
@@ -160,6 +194,9 @@ $(function() {
 
   noiseSettings = SettingsOptions.getDefaultSettings(noiseOptions);
   SettingsOptions.makeControls('noiseOptions', noiseOptions, noiseSettings);
+  
+  positionSettings = SettingsOptions.getDefaultSettings(positionOptions);
+  SettingsOptions.makeControls('positionOptions', positionOptions, positionSettings);
   
   baseFunctions = PerlinTubulence.getBaseFunctions();
   $.each(baseFunctions, function(key, baseFunction) {
@@ -244,11 +281,14 @@ function showActiveColorFunction() {
 
 function setActiveTab(tabID) {
   switch(tabID) {
-    case 'noiseTab':
-      activeBlock = 'noiseSettingsBlock';
-      break;
     case 'baseTab':
       activeBlock = 'baseSettingsBlock';
+      break;
+    case 'positionTab':
+      activeBlock = 'positionSettingsBlock';
+      break;
+    case 'noiseTab':
+      activeBlock = 'noiseSettingsBlock';
       break;
     case 'colorTab':
       activeBlock = 'colorSettingsBlock';

@@ -6,39 +6,87 @@
 <script src="basefunctions.js"></script>
 <script src="colorfunctions.js"></script>
 <script>
+var options, makeDataImage, statusMsg, newCanvas, context, imagedata;
+
 function makeImage() {
-  var options = JSON.parse(decodeURIComponent(document.URL.substr(document.URL.indexOf('options') + 8)));
+  options = JSON.parse(decodeURIComponent(document.URL.substr(document.URL.indexOf('options') + 8)));
+  makeDataImage = options.makeDataImage || false;
+  statusMsg = document.getElementById('statusMsg');
 
   console.log(options);
 
-  var newCanvas = document.createElement('canvas');
+  newCanvas = document.createElement('canvas');
   newCanvas.height = options.height;
   newCanvas.width = options.width;
-  newCanvas.style.display = 'none';
+  newCanvas.style.zIndex = 0;
+  if (makeDataImage) { newCanvas.style.display = 'none'; }
   document.body.appendChild(newCanvas);
   
-  var context = newCanvas.getContext('2d');
-  var imagedata = context.createImageData(options.width, options.height);
+  statusMsg.innerText = 'Working...';
+  
+  context = newCanvas.getContext('2d');
+  imagedata = context.createImageData(options.width, options.height);
   
   baseFunction = PerlinTubulence.makeBaseFunction(options.baseFunction, options.baseFunctionOptions);
   colorFunction = PerlinTubulence.makeColorFunction(options.colorFunction, options.colorFunctionOptions);
 
-  PerlinTubulence.makeImageSlice(imagedata.data, baseFunction, colorFunction, options.perlinOptions,
-        options.width, options.height, options.scale, 0, options.height);
-
-  context.putImageData(imagedata, 0, 0);
-  var hurl = newCanvas.toDataURL();
-
-  var newImage = document.createElement('img');
-  newImage.height = options.height;
-  newImage.width = options.width;
-  newImage.src = hurl;
-  document.body.appendChild(newImage);
-
+  fillPixels(0);
   
 }
+
+function fillPixels(y) {
+  setTimeout(function() {
+    PerlinTubulence.makeImageSlice(imagedata.data, baseFunction, colorFunction, options.perlinOptions, options.positionOptions,
+        options.width, options.height, options.scale, y, 1);
+    context.putImageData(imagedata, 0, 0, 0, y, options.width, 1);
+    statusMsg.innerText = 'Working...' + ((y/options.height * 100).toPrecision(2)) + '%';
+    if (y < options.height) {
+      fillPixels(y+1);
+    } else {
+      finishUp();
+    }
+  }, 0);
+}
+
+function finishUp() {
+  if (makeDataImage) {
+    statusMsg.innerText = 'Generating image...';
+    setTimeout(function() {
+      var hurl = newCanvas.toDataURL();
+      var newImage = document.createElement('img');
+      newImage.height = options.height;
+      newImage.width = options.width;
+      newImage.src = hurl;
+      document.body.appendChild(newImage);
+      statusMsg.style.display = 'none';
+    }, 0);
+  } else {
+    statusMsg.style.display = 'none';
+  }
+}
+
 </script>
+<style>
+body {
+  overflow: hidden;
+  margin:0px;
+  position:absolute;
+}
+div#statusMsg {
+  position:absolute;
+  top: 8px;
+  left: 8px;
+  background-color: white;
+  font-size:1.5em;
+  padding: 0.3em;
+}
+canvas {
+  top: 0px;
+  left: 0px;
+}
+</style>
 </head>
-  <body onload="makeImage()">
-  </body>
+<body onload="makeImage()">
+<div id="statusMsg" style="z-index:1"></div>
+</body>
 </html>

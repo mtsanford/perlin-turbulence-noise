@@ -73,6 +73,24 @@
       }
     }
   });
+
+  PerlinTubulence.addBaseFunction('flower', {
+    name: 'Flower',
+    options: {
+      symmetry: { name: 'Symmetry', type: 'slider', exponential: false, defaultValue: 6, min: 2, max: 20  },
+      period: { name: 'Period', type: 'slider', defaultValue:100, min:10, max:400 },
+    },
+    functionFactory: function(options) {
+      var distanceCycle = (options.period / (2 * Math.PI));
+      return function(x, y) {
+        var angle = (x==0) ? 0 : Math.atan2(y,x);
+        var radialCofactor = (Math.sin(angle * options.symmetry ) + 1) / 2;
+        var distanceCofactor = (1 - Math.cos(Math.sqrt(x * x + y * y) / distanceCycle)) / 2;
+        return Math.sqrt(radialCofactor * distanceCofactor);
+      }
+    }
+  });
+
   
 })(PerlinTubulence);
 
