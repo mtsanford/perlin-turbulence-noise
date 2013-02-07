@@ -76,27 +76,25 @@ var positionOptions = {
     min: 0,
     max: 90,
     defaultValue: 0
-  },
+  }
 };
 
 var positionSettings = {};
-
-
-var gCurrentTaskID = 0;
-var gPreviewWaitTimer = 0;
-var previewWorker;
-var previewContexts = {
-  hidden1: {},
-  hidden2: {},
-  hidden3: {}
-};
 
 var baseFunctions;
 var baseFunctionsSettings = {};
 var colorFunctions;
 var colorFunctionsSettings = {};
 
-var activeTab = 'noiseSettingsBlock';
+// Preview stuff
+var gCurrentTaskID = 0;
+var gPreviewWaitTimer = 0;
+var previewWorker;
+var previewContexts = [
+  {width: 150, height: 100, scale: 4},
+  {width: 300, height: 200, scale: 2},
+  {width: 600, height: 400, scale: 1}
+];
 
 
 // Generate a new preview, but pause 200ms to make sure
@@ -106,11 +104,35 @@ function NewPreviewRequest() {
     clearTimeout(gPreviewWaitTimer);
   }
   gPreviewWaitTimer = setTimeout(function() {
-    WorkerPreview();
-    gPreviewWaitTimer = 0;
+    //  Tell the preview worker to disreguard it's current task (if any)
+    //  and start work on a new one with new options
+    gCurrentTaskID++;
+    gPreviewWaitTimer = 0;    
+    previewWorker.postMessage({
+      command:    'newtask', 
+      taskID:     gCurrentTaskID,
+      options:    makeOptionsObject()
+    });
   }, 200);
 }
 
+function onPreviewWorkerMessage(e) {
+
+  if (e.data.type == 'result') {
+    // If we get spurious data from a canceled task, ignore it
+    if (e.data.taskID != gCurrentTaskID) return;
+    
+    var imageID = e.data.imageID;
+    previewContexts[imageID].context.putImageData(e.data.imagedata, 0, 0);
+    var hurl = previewContexts[imageID].canvas.toDataURL();
+    $('#previewImage').attr('src', hurl);
+  }
+  
+}
+
+
+// Wrap up all settings into one object to be shipped of to the
+// web worker, or put on the URL for a large image page
 function makeOptionsObject() {
   var baseFunction = $('#baseFunctionSelect').val(),
       colorFunction = $('#colorFunctionSelect').val();
@@ -132,55 +154,37 @@ function makeOptionsObject() {
   
 }
 
-/*
- *  Tell the preview worker to disreguard it's current task (if any)
- *  and start work on a new one with new options
- */
-function WorkerPreview() {
-
-  gCurrentTaskID++;
-  
-  previewWorker.postMessage({
-    command:    'newtask', 
-    taskID:     gCurrentTaskID,
-    options:    makeOptionsObject(),
-  });
-  
-}
-
-function onPreviewWorkerMessage(e) {
-
-  if (e.data.type == 'result') {
-    // If we get spurious data from a canceled task, ignore it
-    if (e.data.taskID != gCurrentTaskID) return;
-    
-    var imageID = e.data.imageID;
-    previewContexts[imageID].context.putImageData(e.data.imagedata, 0, 0);
-    var hurl = previewContexts[imageID].element.toDataURL();
-    $('#previewImage').attr('src', hurl);
-  }
-  
-}
-
-
 
 $(function() {
-  var settingsBlock, blockID, previewInfo = [];
+  var settingsBlock, blockID,
+      previewInfo = [];               // Info to provide about previews to web worker
   
-  for (var id in previewContexts) {
-    var element = document.getElementById(id);
-    previewContexts[id].context = element.getContext('2d');
-    previewContexts[id].imagedata = previewContexts[id].context.createImageData(element.width,element.height);
-    previewContexts[id].width = element.width;
-    previewContexts[id].height = element.height;
-    previewContexts[id].element = element;
+  if (typeof window.Worker == "undefined") {
+    $('#errorMsg').text("Your browser does not support web workers.  Try Google Chrome.");
+    return;
+  }
+  
+  if (typeof window.HTMLCanvasElement == "undefined") {
+    $('#errorMsg').text("Your browser does not canvas.  Try Google Chrome.");
+    return;
+  }
+  
+  for (var i=0; i < previewContexts.length; i++) {
+    var element = document.createElement('canvas');
+    element.id = 'canvas' + 0;
+    element.width = previewContexts[i].width;
+    element.height = previewContexts[i].height;
+    
+    previewContexts[i].canvas = element;
+    previewContexts[i].context = element.getContext('2d');
+    previewContexts[i].imagedata = previewContexts[i].context.createImageData(element.width,element.height);
     
     previewInfo.push({
-      imageID: id,
-      imagedata: previewContexts[id].imagedata,
-      width: element.width,
-      height: element.height,
-      scale: 600 / element.width
+      imageID: i,
+      imagedata: previewContexts[i].imagedata,
+      width: previewContexts[i].width,
+      height: previewContexts[i].height,
+      scale: previewContexts[i].scale
     });
 
   }
@@ -231,7 +235,7 @@ $(function() {
   showActiveBaseFunction();
   $('#baseFunctionSelect').change(function(e) {
     showActiveBaseFunction();
-    WorkerPreview();
+    NewPreviewRequest();
   });
 
   showActiveColorFunction();
@@ -240,13 +244,9 @@ $(function() {
     NewPreviewRequest();
   });
 
-  $('#drawButton').click(function(e) {
-    NewPreviewRequest();
-  });
-
   $('#optionsTabs').makeTabs();
   
-  WorkerPreview();
+  NewPreviewRequest();
   
   $('#createImage').click(function(e) {
     NewImageWindow();

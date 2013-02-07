@@ -44,7 +44,7 @@
         settings[o] = options[o].defaultValue;
       }
       return settings;
-    },
+    }
 
   }
   
@@ -78,7 +78,7 @@
         settings[which] = newValue;
         $text.text((newValue).toFixed(3) + unitText);
         notifyChange(blockID, which, settings[which]);
-      },
+      }
     });
     function valueToSliderPos(value) {
       return Math.floor(Math.log( value/config.min ) * 100 / ratio);

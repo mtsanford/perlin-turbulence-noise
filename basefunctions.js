@@ -78,7 +78,7 @@
     name: 'Flower',
     options: {
       symmetry: { name: 'Symmetry', type: 'slider', exponential: false, defaultValue: 6, min: 2, max: 20  },
-      period: { name: 'Period', type: 'slider', defaultValue:100, min:10, max:400 },
+      period: { name: 'Period', type: 'slider', defaultValue:100, min:10, max:400 }
     },
     functionFactory: function(options) {
       var distanceCycle = (options.period / (2 * Math.PI));
@@ -91,7 +91,19 @@
     }
   });
 
-  
+  PerlinTubulence.addBaseFunction('hill', {
+    name: 'Hill',
+    options: {
+      size: { name: 'size', type: 'slider', defaultValue:200, min:50, max:800 }
+    },
+    functionFactory: function(options) {
+      return function(x, y) {
+        var dist = (x * x + y * y) / (options.size * options.size);
+        return Math.pow(0.5, dist);
+      }
+    }
+  });
+
 })(PerlinTubulence);
 
 

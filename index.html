@@ -20,6 +20,7 @@
     <div id="left">
       <div class="header">Image preview</div>
       <div style="clear:both;"></div>
+      <div id="errorMsg" style="color:red; font-size:1.5em;"></div>
       <div id="previewImageWrapper">
         <img id="previewImage"></img>
       </div>
@@ -27,9 +28,9 @@
       <div style="clear:both;"></div>
       <p>Use the settings to the right to preview possible images.  To create a large version of the preview image in another window, click the create button.</p>
       <div class="settingType">Width</div>
-      <input id="imageWidth" value="600" />
+      <input id="imageWidth" value="1200" />
       <div class="settingType">Height</div>
-      <input id="imageHeight" value="400" />
+      <input id="imageHeight" value="800" />
       <div style="clear:both;"></div>
       <button type="button" id="createImage">Create</button>
     </div>
@@ -63,14 +64,5 @@
       </div>
     </div>
   </div>
-  <canvas id="hidden1" width="150" height="100" style="display:none;">
-    <p>this browser does not support the canvas API</p>
-  </canvas>
-  <canvas id="hidden2" width="300" height="200" style="display:none;">
-    <p>this browser does not support the canvas API</p>
-  </canvas>
-  <canvas id="hidden3" width="600" height="400" style="display:none;">
-    <p>this browser does not support the canvas API</p>
-  </canvas>
 </body>
 </html>
