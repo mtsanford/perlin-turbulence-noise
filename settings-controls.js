@@ -32,6 +32,9 @@
           case 'color':
             makeColorControl($block, blockID, option, settings, optName);
             break;
+          case 'text':
+            makeTextControl($block, blockID, option, settings, optName);
+            break;
         }
         if (option.description) { $block.append($('<div class="settingDescription">' + option.description + '</div>')); }
       }
@@ -128,12 +131,21 @@
       notifyChange(blockID, which, newColor);
     });
     $input.keyup(function(e) {
-      console.log($input.val());
       if (colorOK($input.val())) {
         settings[which] = $input.val();
         $picker.setColor(settings[which]);
         notifyChange(blockID, which, settings[which]);
       }
+    });
+  }
+
+  function makeTextControl($block, blockID, config, settings, which) {
+    var inputID = blockID + '-' + which;
+    var $input = $('<textarea rows="8" cols="50" id="' + inputID + '" class="settingTextInput" spellcheck=false>' + settings[which] + '</textarea>');
+    $block.append($input);
+    $input.keyup(function(e) {
+      settings[which] = $input.val();
+      notifyChange(blockID, which, settings[which]);
     });
   }
 

@@ -49,6 +49,23 @@
       }
     }
   });  
+
+  PerlinTubulence.addColorFunction('custom', {
+    name: 'Custom',
+    options: {
+      code: { name: 'code', type: 'text', defaultValue: "// Temporary variables are O.K.\ntemp = value * 255;\n\n// Don't return the array\n// Just create expression as last statement\n[0, temp, 0];", 
+        description: "Javascript code to turn value (0 to 1) into an array with an RGB color e.g. [0,255,255]"  }
+    },
+    functionFactory: function(options) {
+      return function(value, colorContext) {
+        try {
+          return eval(options.code);
+        } catch(e) {
+          return 0;
+        }
+      }
+    }
+  });
   
 })(PerlinTubulence);
 

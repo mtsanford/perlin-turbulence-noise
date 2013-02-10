@@ -159,16 +159,18 @@ $(function() {
   var settingsBlock, blockID,
       previewInfo = [];               // Info to provide about previews to web worker
   
-  if (typeof window.Worker == "undefined") {
+  if (typeof window.Worker === "undefined") {
     $('#errorMsg').text("Your browser does not support web workers.  Try Google Chrome.");
     return;
   }
   
-  if (typeof window.HTMLCanvasElement == "undefined") {
+  if (typeof window.HTMLCanvasElement === "undefined") {
     $('#errorMsg').text("Your browser does not canvas.  Try Google Chrome.");
     return;
   }
   
+  // create the assets for previews, and create an info object
+  // to send to the worker
   for (var i=0; i < previewContexts.length; i++) {
     var element = document.createElement('canvas');
     element.id = 'canvas' + 0;

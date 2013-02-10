@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+  <p>Perlin tublence toy uses <a href="http://en.wikipedia.org/wiki/Perlin_noise">Perlin noise</a> to make interesting 2D art.</p>
+  <p>3 kinds of functions are used to make an image:</p>
+  <ul>
+    <li>Base function: function for every point (x,y) generates a value between 0 and 1, such as a cosine ripple</li>
+    <li>Noise function: smooth perlin noise function for every point (x,y) generates a pseudo random number between 0 and 1</li>
+    <li>Color function: for a value between 0 and 1, defines a color</li>
+  </ul>
+  <p>How the image is calculated:  Two noise functions N<sub>1</sub> and N<sub>2</sub> are used.  
+  For every point (x,y) the value of the noise functions (0 to 1) are calculated.  
+  Some mulpiple of these noise functions is added to (x,y) to get a new point (x<sub>t</sub>,y<sub>t</sub>) with turbulence added.
+  This new point (x<sub>t</sub>,y<sub>t</sub>) is then the input to the base function, which generates a number b between 0 and 1.
+  The output of the base function is then the input to a color function, that determines the color of the point at (x,y).</p>
+  <p>Tips</p>
+  <ul>
+    <li>The best way to see what a base function looks like is to click the "noise" tab and set the noise magnitude to it's lowest setting</li>
+    <li>High noise magnitude settings make crazy images!</li>
+  </ul>
+</body>
+</html>

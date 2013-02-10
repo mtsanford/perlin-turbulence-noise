@@ -104,6 +104,24 @@
     }
   });
 
+  PerlinTubulence.addBaseFunction('custom', {
+    name: 'Custom',
+    options: {
+      code: { name: 'code', type: 'text', defaultValue: "// Temporary variables are O.K.\ntemp = 1 / ((x*x + y*y) * 0.0001);\n\n// Don't use \"return\"\n// Just create expression as last statement\ntemp;", 
+      description: "Javascript code to use the variables x and y to create a value between 0 and 1.   Value will be clamped for you."  }
+    },
+    functionFactory: function(options) {
+      return function(x, y) {
+        try {
+          var value = eval(options.code);
+          return (value > 1) ? 1 : (value < 0) ? 0 : value;
+        } catch(e) {
+          return 0;
+        }
+      }
+    }
+  });
+
 })(PerlinTubulence);
 
 
