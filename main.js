@@ -254,6 +254,10 @@ $(function() {
     NewImageWindow();
   });
   
+  // Set the default size for a large image
+  $('#imageWidth').val(screen.width);
+  $('#imageHeight').val(screen.height);
+  
 });
 
 function NewImageWindow() {
@@ -262,7 +266,7 @@ function NewImageWindow() {
   options.height = $('#imageHeight').val();
   options.scale = 600 / options.width;
   var optionsString = encodeURIComponent(JSON.stringify(options));
-  window.open('http://localhost/perlin/image.html?options=' + optionsString);
+  window.open('image.html?options=' + optionsString);
 }
 
 function showActiveBaseFunction() {

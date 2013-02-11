@@ -50,6 +50,25 @@
     }
   });  
 
+  PerlinTubulence.addColorFunction('onion', {
+    name: 'Onion peel',
+    options: {
+      layers: { name: 'Layers', type: 'slider', defaultValue: 5, min: 1, max: 20 },
+      color: { name: 'Color', type: 'color', defaultValue: '#FFFFFF'},
+      invert: { name: 'invert', type: 'checkbox', defaultValue: false }
+    },
+    functionFactory: function(options) {
+      var rgb = PerlinTubulence.rbgColor(options.color);
+      return function(value) {
+        var temp = ((value * options.layers * 100) % 100) / 100;
+        if (options.invert) {
+          temp = 1 - temp;
+        }
+        return [(rgb[0] * temp), (rgb[1] * temp), (rgb[2] * temp)];
+      }
+    }
+  });  
+
   PerlinTubulence.addColorFunction('custom', {
     name: 'Custom',
     options: {
