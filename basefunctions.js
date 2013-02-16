@@ -50,7 +50,7 @@
   PerlinTubulence.addBaseFunction('dots', {
     name: 'Dots',
     options: {
-      period: { name: 'Period', type: 'slider', defaultValue:100, min:10, max:1000 },
+      period: { name: 'Period', type: 'slider', defaultValue:100, min:8, max:400 },
       radius: { name: 'Radius', type: 'slider', unit: '%', defaultValue:30, min:5, max:45 },
       fade: { name: 'Fade', type: 'slider', unit: '%', defaultValue:40, min:0, max:100 }
     },

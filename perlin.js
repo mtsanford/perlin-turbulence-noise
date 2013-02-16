@@ -76,7 +76,7 @@
     makeImageSlice: function(imagedata, baseFunction, colorFunction, perlinOptions, positionOptions, width, height, scale, startY, lines) {
     
       // Set default noise options if not present
-      perlinOptions = perlinOptions || {};  
+      perlinOptions = perlinOptions || {};
       for (var o in PerlinTubulence.defaultPerlinOptions) {
         perlinOptions[o] = perlinOptions[o] || PerlinTubulence.defaultPerlinOptions[o];
       }
@@ -87,8 +87,8 @@
       var z = perlinOptions.seed;
       var turbType = perlinOptions.type;
       
-      var posCos = Math.cos(positionOptions.angle * Math.PI / 90);
-      var posSin = Math.sin(positionOptions.angle * Math.PI / 90);
+      var posCos = Math.cos(positionOptions.angle * Math.PI / 180);
+      var posSin = Math.sin(positionOptions.angle * Math.PI / 180);
       
       startY = (typeof startY == 'undefined') ? 0 : startY;
       lines = (typeof lines == 'undefined') ? height : lines;
