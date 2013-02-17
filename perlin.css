@@ -11,6 +11,10 @@ button {
 p {
   margin-top: 0;
 }
+#errorMsg {
+ color:red;
+ font-size:1.5em;
+}
 #main {
   width: 960px;
   margin: 50px auto auto auto;

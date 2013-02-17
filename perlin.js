@@ -233,8 +233,7 @@
   
   exports.PerlinTubulence = PerlinTubulence;
 
-   // export to window or self so that we can run
-   // in either UI thread or a web worker
-   // TODO: Is there a best practice on this?
-})(typeof window == 'undefined' ? self : window);
-
+  // we are in "global" context, so
+  // this === window for broswer
+  // this === self for web worker
+})(this);
